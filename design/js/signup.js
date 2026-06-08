@@ -1,7 +1,10 @@
 const signupForm = document.querySelector('#signupForm');
+const nameInput = document.querySelector('#name');
+const emailInput = document.querySelector('#email');
 const passwordInput = document.querySelector('#password');
 const confirmInput = document.querySelector('#passwordConfirm');
 const matchMsg = document.querySelector('#passwordMatchMsg');
+const submitBtn = document.querySelector('#signupForm .btn-signup');
 
 // 비밀번호 일치 실시간 확인
 function checkPasswordMatch () {
@@ -26,32 +29,52 @@ function checkPasswordMatch () {
 passwordInput.addEventListener('input', checkPasswordMatch);
 confirmInput.addEventListener('input', checkPasswordMatch);
 
-// 회원가입 제출 처리
-function handleSignup (e) {
+// 회원가입 폼 제출 처리
+async function handleSignup (e) {
   e.preventDefault();
 
-  const { value: name } = document.querySelector('#name');
-  const { value: email } = document.querySelector('#email');
-  const { value: password } = document.querySelector('#password');
-  const { value: confirm } = document.querySelector('#passwordConfirm');
+  const name = nameInput.value.trim();
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  const confirm = confirmInput.value;
 
-  if (!name || !email || !password || !confirm) {
-    alert('모든 필드를 입력해주세요.');
-    return;
+  if (!name) { alert(MSG.signupNameRequired); return; }
+  if (!email) { alert(MSG.signupEmailRequired); return; }
+  if (!password) { alert(MSG.signupPasswordRequired); return; }
+  if (!confirm) { alert(MSG.signupConfirmRequired); return; }
+  if (password !== confirm) { alert(MSG.signupPasswordMismatch); return; }
+  if (password.length < 8) { alert(MSG.signupPasswordLength); return; }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = '가입 중...';
+
+  try {
+    const { data, error } = await _supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name }
+      }
+    });
+
+    if (error) {
+      alert(error.status === 422
+        ? MSG.signupEmailExists
+        : MSG.signupError
+      );
+      return;
+    }
+
+    if (data.user) {
+      alert(MSG.signupSuccess);
+      window.location.href = 'login.html';
+    }
+  } catch {
+    alert(MSG.networkError);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '가입하기';
   }
-
-  if (password !== confirm) {
-    alert('비밀번호가 일치하지 않습니다.');
-    return;
-  }
-
-  if (password.length < 8) {
-    alert('비밀번호는 8자 이상이어야 합니다.');
-    return;
-  }
-
-  alert(`회원가입 요청: ${name} (${email})`);
-  // Supabase 연동 시 실제 회원가입 로직으로 대체
 }
 
 signupForm.addEventListener('submit', handleSignup);
