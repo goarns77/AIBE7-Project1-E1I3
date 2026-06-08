@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>모여행</title>
+
+  <link
+    rel="stylesheet"
+    href="./css/style.css"
+  >
+</head>
+
+<body>
+
+  <header>
+    <h1>모여행</h1>
+  </header>
+
+  <main>
+
+    <section id="trip-section">
+
+      <h2>공동 여행 계획</h2>
+
+      <form id="trip-form">
+
+        <input
+          type="text"
+          name="tripTitle"
+          placeholder="여행명을 입력하세요"
+          required
+        >
+
+        <button type="submit">
+          여행 생성
+        </button>
+
+      </form>
+
+    </section>
+
+    <section id="schedule-section">
+
+      <div class="section-header">
+
+        <h2>일정 관리</h2>
+
+        <button id="add-schedule-btn">
+          일정 추가
+        </button>
+
+      </div>
+
+      <div id="schedule-list">
+      </div>
+
+    </section>
+
+    <section id="map-section">
+
+      <h2>여행 지도</h2>
+
+      <div id="map"></div>
+
+    </section>
+
+  </main>
+
+  <script src="./js/storage.js"></script>
+  <script src="./js/map.js"></script>
+  <script src="./js/app.js"></script>
+
+</body>
+</html>
