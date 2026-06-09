@@ -3,56 +3,30 @@ const chatInput = document.querySelector('#chatInput');
 const sendBtn = document.querySelector('#sendBtn');
 const newChatBtn = document.querySelector('.chat-header-btn');
 
-// 로그인 세션 확인 및 메시지 로드
 let currentUser = null;
 
-async function initChat () {
-  try {
-    const { data: { session } } = await _supabase.auth.getSession();
-    currentUser = session?.user ?? null;
+// ────── localStorage 저장/불러오기 ──────
 
-    if (currentUser) {
-      await loadChatHistory();
-    } else {
-      const welcome = createMessage('ai', MSG.chatWelcome);
-      chatMessages.appendChild(welcome);
-    }
-  } catch {
-    const welcome = createMessage('ai', MSG.chatWelcome);
-    chatMessages.appendChild(welcome);
-  }
+function getStorageKey () {
+  const uid = currentUser?.id || 'anonymous';
+  return `chat_log_${uid}`;
 }
 
-// 서버에서 채팅 내역 불러오기
-async function loadChatHistory () {
+function saveToLocal (messages) {
   try {
-    const { data, error } = await _supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('user_id', currentUser.id)
-      .order('created_at', { ascending: true });
-
-    if (error) return;
-    if (!data || data.length === 0) {
-      const welcome = createMessage('ai', MSG.chatWelcome);
-      chatMessages.appendChild(welcome);
-      return;
-    }
-
-    for (const msg of data) {
-      const type = msg.role === 'user' ? 'user' : 'ai';
-      const content = msg.content || msg.html_content || '';
-      if (!content) continue;
-      const el = createMessage(type, content);
-      chatMessages.appendChild(el);
-    }
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  } catch {
-    // 서버 조회 실패 시 시작 메시지만 표시
-  }
+    localStorage.setItem(getStorageKey(), JSON.stringify(messages));
+  } catch { /* 용량 초과 등 무시 */ }
 }
 
-// 메시지 말풍선 생성
+function loadFromLocal () {
+  try {
+    const raw = localStorage.getItem(getStorageKey());
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+// ────── 메시지 말풍선 생성 ──────
+
 function createMessage (type, content) {
   const isAI = type === 'ai';
   const wrapper = document.createElement('div');
@@ -74,10 +48,57 @@ function createMessage (type, content) {
   return wrapper;
 }
 
-// 메시지를 서버에 저장
-async function saveMessage (role, content, htmlContent) {
-  if (!currentUser) return;
+function addMessage (type, content) {
+  const msg = createMessage(type, content);
+  chatMessages.appendChild(msg);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
 
+// ────── 채팅 내역 불러오기 ──────
+
+async function loadChatHistory () {
+  const local = loadFromLocal();
+  if (local && local.length > 0) {
+    for (const msg of local) {
+      addMessage(msg.role === 'user' ? 'user' : 'ai', msg.html || msg.text);
+    }
+    return;
+  }
+
+  // localStorage에 없으면 Supabase 시도
+  if (!currentUser) return;
+  try {
+    const { data, error } = await _supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: true });
+
+    if (error) return;
+    if (!data || data.length === 0) return;
+
+    const localCopy = [];
+    for (const msg of data) {
+      const content = msg.html_content || msg.content || '';
+      if (!content) continue;
+      addMessage(msg.role === 'user' ? 'user' : 'ai', content);
+      localCopy.push({ role: msg.role, text: msg.content || '', html: msg.html_content || '' });
+    }
+    saveToLocal(localCopy);
+  } catch { /* 테이블 없음 */ }
+}
+
+// ────── 메시지 저장 ──────
+
+const _messageBuffer = [];
+
+function pushMessage (role, text, html) {
+  _messageBuffer.push({ role, text, html: html || text });
+  saveToLocal(_messageBuffer);
+}
+
+async function saveToSupabase (role, content, htmlContent) {
+  if (!currentUser) return;
   try {
     await _supabase.from('chat_messages').insert({
       user_id: currentUser.id,
@@ -85,12 +106,11 @@ async function saveMessage (role, content, htmlContent) {
       content,
       html_content: htmlContent || content
     });
-  } catch {
-    // 저장 실패는 무시 (화면 표시에는 영향 없음)
-  }
+  } catch { /* 테이블 없으면 무시 */ }
 }
 
-// 추천 결과 카드 생성
+// ────── AI 응답 생성 ──────
+
 function createRecommendCard (title, desc, tag) {
   const placeholderImages = [
     'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=200&fit=crop',
@@ -111,34 +131,6 @@ function createRecommendCard (title, desc, tag) {
   `;
 }
 
-// 새로운 메시지 추가 후 스크롤
-function addMessage (type, content) {
-  const msg = createMessage(type, content);
-  chatMessages.appendChild(msg);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-// 사용자 메시지 전송
-async function sendMessage () {
-  const text = chatInput.value.trim();
-  if (!text) return;
-
-  // 사용자 메시지 추가
-  addMessage('user', text);
-  await saveMessage('user', text);
-  chatInput.value = '';
-
-  // AI 응답 생성
-  try {
-    const aiResponse = generateAIResponse(text);
-    addMessage('ai', aiResponse);
-    await saveMessage('assistant', aiResponse.replace(/<[^>]+>/g, ''), aiResponse);
-  } catch {
-    addMessage('ai', MSG.chatError);
-  }
-}
-
-// AI 응답 생성 (키워드 기반 추천)
 function generateAIResponse (query) {
   const responses = [
     {
@@ -191,7 +183,6 @@ function generateAIResponse (query) {
     }
   ];
 
-  // 키워드 매칭
   for (const res of responses) {
     if (res.match.test(query)) {
       let text = res.text + '<br>';
@@ -202,36 +193,71 @@ function generateAIResponse (query) {
     }
   }
 
-  // 기본 응답 (키워드 힌트 포함)
-  const hints = ['국내 여행', '해외 여행', '힐링 여행', '맛집 여행', '액티비티', '가족 여행'];
+  const hints = ['국내 여행', '해외 여향', '힐링 여행', '맛집 여행', '액티비티', '가족 여행'];
   const hintStr = hints.map(h => `"${h}"`).join(', ');
   return `좋은 여행을 계획 중이시군요! 😊<br><br>` +
     `취향에 맞는 키워드를 알려주시면<br>더 정확히 추천해드릴게요.<br><br>` +
     `예시: ${hintStr}`;
 }
 
-// 새 대화 시작
-async function handleNewChat () {
-  chatMessages.innerHTML = '';
-  const welcome = createMessage('ai', MSG.chatWelcome);
-  chatMessages.appendChild(welcome);
+// ────── 메시지 전송 ──────
 
-  if (currentUser) {
-    try {
-      await _supabase
-        .from('chat_messages')
-        .delete()
-        .eq('user_id', currentUser.id);
-    } catch {
-      // 삭제 실패 무시
-    }
+async function sendMessage () {
+  const text = chatInput.value.trim();
+  if (!text) return;
+
+  // 사용자 메시지
+  addMessage('user', text);
+  pushMessage('user', text);
+  saveToSupabase('user', text);
+  chatInput.value = '';
+
+  // AI 응답
+  const aiHtml = generateAIResponse(text);
+  const aiText = aiHtml.replace(/<[^>]+>/g, '');
+  addMessage('ai', aiHtml);
+  pushMessage('assistant', aiText, aiHtml);
+  saveToSupabase('assistant', aiText, aiHtml);
+}
+
+// ────── 초기화 ──────
+
+async function initChat () {
+  try {
+    const { data: { session } } = await _supabase.auth.getSession();
+    currentUser = session?.user ?? null;
+  } catch { /* 비로그인 */ }
+
+  await loadChatHistory();
+
+  // 불러온 내역이 없으면 환영 메시지
+  if (chatMessages.children.length === 0) {
+    addMessage('ai', MSG.chatWelcome);
   }
 }
 
-// 이벤트 바인딩
+// ────── 새 대화 ──────
+
+async function handleNewChat () {
+  chatMessages.innerHTML = '';
+  _messageBuffer.length = 0;
+  localStorage.removeItem(getStorageKey());
+  addMessage('ai', MSG.chatWelcome);
+
+  if (currentUser) {
+    try {
+      await _supabase.from('chat_messages').delete().eq('user_id', currentUser.id);
+    } catch { /* 무시 */ }
+  }
+}
+
+// ────── 이벤트 바인딩 ──────
+
 sendBtn.addEventListener('click', sendMessage);
 
 chatInput.addEventListener('keydown', (e) => {
+  // 한글 IME 조합 중 Enter 무시
+  if (e.isComposing || e.keyCode === 229) return;
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
@@ -249,5 +275,4 @@ if (newChatBtn) {
   newChatBtn.addEventListener('click', handleNewChat);
 }
 
-// 초기화
 initChat();
