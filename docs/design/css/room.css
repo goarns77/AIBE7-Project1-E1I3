@@ -1,0 +1,179 @@
+/* 웹폰트 — 본문 Pretendard (100~900) */
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Thin.woff2') format('woff2'); font-weight: 100; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraLight.woff2') format('woff2'); font-weight: 200; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2') format('woff2'); font-weight: 300; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraBold.woff2') format('woff2'); font-weight: 800; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Black.woff2') format('woff2'); font-weight: 900; font-display: swap; }
+
+/* 웹폰트 — 제목 Paperlogy (100~900) */
+@font-face { font-family: 'Paperlogy'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-1Thin.woff2') format('woff2'); font-weight: 100; font-display: swap; }
+@font-face { font-family: 'Paperlogy'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-2ExtraLight.woff2') format('woff2'); font-weight: 200; font-display: swap; }
+@font-face { font-family: 'Paperlogy'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-3Light.woff2') format('woff2'); font-weight: 300; font-display: swap; }
+@font-face { font-family: 'Paperlogy'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-4Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Paperlogy'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-5Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Paperlogy'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Paperlogy'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Paperlogy'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-8ExtraBold.woff2') format('woff2'); font-weight: 800; font-display: swap; }
+@font-face { font-family: 'Paperlogy'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-9Black.woff2') format('woff2'); font-weight: 900; font-display: swap; }
+
+:root {
+  /* Sky & Shore 팔레트를 Bootstrap 변수에 매핑 */
+  --bs-primary: #00658d;
+  --bs-primary-rgb: 0, 101, 141;
+  --brand-sky: #00baff;
+  --brand-teal: #006b5f;
+  --brand-teal-container: #62fae3;
+  --brand-surface: #f8f9ff;
+}
+
+body {
+  font-family: 'Pretendard', system-ui, -apple-system, sans-serif;
+  background-color: var(--brand-surface);
+  color: #0b1c30;
+  word-break: keep-all; /* 한글 줄바꿈 자연스럽게 */
+}
+
+h1, h2, h3, .heading {
+  font-family: 'Paperlogy', 'Pretendard', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Primary 버튼을 브랜드 스카이블루 톤으로 */
+.btn-primary {
+  --bs-btn-bg: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: #004c6b;
+  --bs-btn-hover-border-color: #004c6b;
+  --bs-btn-active-bg: #004c6b;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: var(--bs-primary);
+  --bs-btn-hover-border-color: var(--bs-primary);
+}
+
+/* 카드 그림자를 브랜드 톤으로 부드럽게 */
+.card {
+  border: 1px solid #e5eeff;
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px rgba(0, 186, 255, 0.08);
+}
+
+/* 멤버 이니셜 아바타 */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-sky);
+  color: #fff;
+  font-weight: 700;
+  margin-left: -8px;
+  border: 2px solid #fff;
+}
+.avatar:first-child {
+  margin-left: 0;
+}
+
+/* 투표 결과 막대 그래프 */
+.progress {
+  height: 10px;
+  background: #e5eeff;
+}
+.progress-bar {
+  background: var(--brand-sky);
+}
+
+/* === Stitch 디자인 참고 컴포넌트 === */
+
+/* 글래스모픽 패널 — 헤더/오버레이용 반투명 */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* 브랜드 로고 텍스트 */
+.brand-logo {
+  font-family: 'Paperlogy', 'Pretendard', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--bs-primary);
+}
+
+/* 알약형 버튼 + hover 시 살짝 확대 */
+.btn-pill {
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+}
+.btn-pill:hover {
+  transform: scale(1.03);
+}
+
+/* 보조(teal) 알약 버튼 — Share 등 */
+.btn-teal {
+  background: var(--brand-teal-container);
+  color: #007165;
+  border: none;
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+}
+.btn-teal:hover {
+  transform: scale(1.03);
+  color: #007165;
+}
+
+/* 2rem 라운드 카드(컨테이너 강조) */
+.rounded-4xl {
+  border-radius: 2rem !important;
+}
+
+/* 부드러운 인풋 — 보더 대신 그림자 */
+.input-soft {
+  border: none;
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border-radius: 1rem;
+}
+.input-soft:focus {
+  box-shadow: 0 0 0 0.25rem rgba(0, 186, 255, 0.15);
+}
+
+/* Material Symbols 기본 정렬 */
+.material-symbols-outlined {
+  vertical-align: middle;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* 투표 득표 칩(thumb_up + 수) */
+.vote-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--brand-surface);
+  color: var(--brand-teal);
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* 일정 보드 컬럼(Day 1, Day 2, 미정) */
+.board-col {
+  background: var(--brand-surface);
+  border: 1px solid #e5eeff;
+}
+.board-col.unscheduled {
+  background: #d3e4fe;
+}
