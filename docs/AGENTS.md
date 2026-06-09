@@ -6,6 +6,7 @@
 - 서버 작동 테스트는 사용자가 직접 진행
 - 꼭 spa가 아니어도 괜찮으므로 너무 html, js 파일이 길어지지 않도록 주의
 - 이미 push된 태그는 이동하지 않고, 변경 반영 시 minor 또는 patch 버전을 올려 새 태그로 push
+- AI API: Groq 사용, .env의 GROQ_API_KEY로 관리, @langchain/openai로 OpenAI 호환 API 호출
 
 ## 화면 구현
 
