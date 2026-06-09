@@ -74,6 +74,7 @@ const MSG = {
     joinSuccess: '여행방에 입장했어요.',
     notFound: '여행방을 찾을 수 없어요.',
     nicknameRequired: '닉네임을 입력해 주세요.',
+    deleteConfirm: '이 여행방을 삭제할까요? 멤버·투표·일정이 모두 사라지며 되돌릴 수 없어요.',
   },
   // 그룹 투표 관련 문구
   vote: {

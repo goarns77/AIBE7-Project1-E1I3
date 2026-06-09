@@ -47,3 +47,27 @@ function avatarHtml(nickname) {
   const initial = (nickname || '?').trim().charAt(0);
   return `<span class="avatar" title="${escapeHtml(nickname)}">${escapeHtml(initial)}</span>`;
 }
+
+// 내가 만들거나 참여한 여행방 ID 목록 반환(로그인 전 로컬 기준)
+function getMyRooms() {
+  // 저장된 목록을 역직렬화
+  const raw = localStorage.getItem('motrip:myRooms');
+  return raw ? JSON.parse(raw) : [];
+}
+
+// 여행방 ID를 내 목록 맨 앞에 추가(중복 방지)
+function rememberRoom(roomId) {
+  const ids = getMyRooms();
+  // 이미 있으면 그대로, 없으면 추가
+  if (!ids.includes(roomId)) {
+    ids.unshift(roomId);
+    localStorage.setItem('motrip:myRooms', JSON.stringify(ids));
+  }
+}
+
+// 여행방 ID를 내 목록에서 제거
+function forgetRoom(roomId) {
+  // 해당 ID를 제외하고 다시 저장
+  const ids = getMyRooms().filter((id) => id !== roomId);
+  localStorage.setItem('motrip:myRooms', JSON.stringify(ids));
+}
