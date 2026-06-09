@@ -202,7 +202,7 @@ function generateAIResponse (query) {
     }
   }
 
-  const hints = ['국내 여행', '해외 여향', '힐링 여행', '맛집 여행', '액티비티', '가족 여행'];
+  const hints = ['국내 여행', '해외 여행', '힐링 여행', '맛집 여행', '액티비티', '가족 여행'];
   const hintStr = hints.map(h => `"${h}"`).join(', ');
   return `좋은 여행을 계획 중이시군요! 😊<br><br>` +
     `취향에 맞는 키워드를 알려주시면<br>더 정확히 추천해드릴게요.<br><br>` +
