@@ -30,6 +30,7 @@ const SYSTEM_PROMPT = `너는 "모여행"의 AI 여행 추천 봇이야.
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, history } = req.body;
+    console.log('요청 받음:', { message: message?.slice(0, 50) });
     if (!message) return res.status(400).json({ error: '메시지가 필요합니다.' });
 
     const messages = [new SystemMessage(SYSTEM_PROMPT)];
@@ -44,11 +45,16 @@ app.post('/api/chat', async (req, res) => {
 
     messages.push(new HumanMessage(message));
 
+    console.log('Gemini API 호출 중...');
     const result = await model.invoke(messages);
+    console.log('Gemini 응답 성공');
     res.json({ response: result.content });
   } catch (err) {
-    console.error('Gemini API 오류:', err.message);
-    res.status(500).json({ error: 'AI 응답 생성 중 오류가 발생했습니다.' });
+    console.error('Gemini API 오류 상세:', err);
+    res.status(500).json({
+      error: 'AI 응답 생성 중 오류가 발생했습니다.',
+      detail: err.message
+    });
   }
 });
 
@@ -64,6 +70,10 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
+  const keyPreview = process.env.GEMINI_API_KEY
+    ? process.env.GEMINI_API_KEY.slice(0, 6) + '...'
+    : '(없음)';
   console.log(`서버 실행 중: http://localhost:${PORT}`);
   console.log(`AI 채팅 페이지: http://localhost:${PORT}/design/html/ai-chat.html`);
+  console.log(`GEMINI_API_KEY: ${keyPreview}`);
 });
