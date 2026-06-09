@@ -1,0 +1,369 @@
+/**
+ * finance.css — 지출 내역 & 정산 모듈 전용 스타일
+ * 공통 테마(Bootstrap 5)를 기반으로 Sky & Shore Aesthetic을 반영한다.
+ * DESIGN.md의 컬러 토큰·타이포그래피·라운드 규칙·엘리베이션을 준수한다.
+ */
+
+/* ═══════════════════════════════════════════
+   1. CSS 변수 — DESIGN.md 컬러 토큰 매핑
+   ═══════════════════════════════════════════ */
+:root {
+  /* 브랜드 컬러 */
+  --clr-primary:            #00658d;
+  --clr-primary-container:  #00baff;
+  --clr-secondary:          #006b5f;
+  --clr-secondary-container:#62fae3;
+  --clr-error:              #ba1a1a;
+  --clr-error-container:    #ffdad6;
+
+  /* 서피스 컬러 */
+  --clr-surface:            #f8f9ff;
+  --clr-surface-container:  #e5eeff;
+  --clr-surface-high:       #dce9ff;
+  --clr-on-surface:         #0b1c30;
+  --clr-on-surface-variant: #3d4850;
+  --clr-outline:            #6d7881;
+  --clr-outline-variant:    #bdc8d2;
+
+  /* 엘리베이션 그림자 (Primary Blue 틴트) */
+  --shadow-card: 0 2px 12px rgba(0, 186, 255, 0.08);
+  --shadow-hover: 0 6px 24px rgba(0, 186, 255, 0.15);
+
+  /* 타이포그래피 */
+  --font-main: 'Paperlogy', 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Pretendard', 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ═══════════════════════════════════════════
+   2. 폰트 로드 — Paperlogy(제목)·Pretendard(본문)
+   ═══════════════════════════════════════════ */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+/* ═══════════════════════════════════════════
+   3. 전역 기본 설정
+   ═══════════════════════════════════════════ */
+body {
+  background-color: var(--clr-surface);
+  color: var(--clr-on-surface);
+  font-family: var(--font-body);
+  word-break: keep-all; /* 한글 단어 단위 줄바꿈 */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-main);
+}
+
+/* ═══════════════════════════════════════════
+   4. 내비게이션 바 — 글래스모픽 스타일
+   ═══════════════════════════════════════════ */
+.navbar-finance {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--clr-outline-variant);
+  box-shadow: var(--shadow-card);
+}
+
+/* 브랜드 로고 */
+.brand-logo {
+  font-family: var(--font-main);
+  font-weight: 800;
+  font-size: 1.4rem;
+  background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-container));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.01em;
+}
+
+/* ═══════════════════════════════════════════
+   5. 페이지 레이아웃 — Fixed-Focus Grid (DESIGN.md)
+   ═══════════════════════════════════════════ */
+.finance-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 15%;
+}
+
+@media (max-width: 1100px) {
+  .finance-container { padding: 0 5%; }
+}
+
+@media (max-width: 768px) {
+  .finance-container { padding: 0 20px; }
+}
+
+/* ═══════════════════════════════════════════
+   6. 카드 — Elevation Level 1 & 2
+   ═══════════════════════════════════════════ */
+.card-finance {
+  background: #fff;
+  border: 1px solid var(--clr-outline-variant);
+  border-radius: 1rem; /* 16px — 컨테이너 기준 radius */
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-finance:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px); /* hover 시 미세 부상 효과 */
+}
+
+/* 카드 헤더 */
+.card-finance .card-header {
+  background: linear-gradient(135deg, var(--clr-primary), #0088c2);
+  color: #fff;
+  border-radius: 1rem 1rem 0 0;
+  border: none;
+  padding: 1rem 1.25rem;
+}
+
+/* ═══════════════════════════════════════════
+   7. 파이 차트 영역
+   ═══════════════════════════════════════════ */
+.chart-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 320px;   /* 차트 최대 너비 제한 */
+  margin: 0 auto;
+}
+
+/* 차트 중앙 총액 표시 레이블 */
+.chart-center-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.chart-center-label .total-amount {
+  display: block;
+  font-family: var(--font-main);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--clr-primary);
+  line-height: 1.2;
+}
+
+.chart-center-label .total-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--clr-on-surface-variant);
+}
+
+/* ═══════════════════════════════════════════
+   8. 예산 진행률 바
+   ═══════════════════════════════════════════ */
+.budget-bar-wrap {
+  background: var(--clr-surface-container);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.budget-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--clr-primary), var(--clr-primary-container));
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 예산 초과 시 색상 변경 */
+.budget-bar-fill.over-budget {
+  background: linear-gradient(90deg, var(--clr-error), #ff6b6b);
+}
+
+/* ═══════════════════════════════════════════
+   9. 지출 카테고리 배지
+   ═══════════════════════════════════════════ */
+.category-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* 카테고리별 색상 매핑 */
+.cat-accommodation { background: #dce9ff; color: #004c6b; }
+.cat-food          { background: #fff3cd; color: #7a5c00; }
+.cat-transport     { background: #d1fae5; color: #065f46; }
+.cat-activity      { background: #ede9fe; color: #5b21b6; }
+.cat-shopping      { background: #fce7f3; color: #9d174d; }
+.cat-etc           { background: #f3f4f6; color: #374151; }
+
+/* ═══════════════════════════════════════════
+   10. 지출 내역 행
+   ═══════════════════════════════════════════ */
+.expense-row {
+  border-left: 3px solid transparent;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.expense-row:hover {
+  border-left-color: var(--clr-primary-container);
+  background: var(--clr-surface-container);
+}
+
+/* 금액 강조 */
+.amount-text {
+  font-family: var(--font-main);
+  font-weight: 700;
+  color: var(--clr-primary);
+}
+
+/* ═══════════════════════════════════════════
+   11. 정산 카드 — 주고 받는 화살표 스타일
+   ═══════════════════════════════════════════ */
+.settlement-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--clr-surface-container);
+  border-radius: 0.75rem;
+  margin-bottom: 0.5rem;
+  animation: slideIn 0.25s ease;
+}
+
+.settlement-arrow {
+  color: var(--clr-primary);
+  font-size: 1.2rem;
+}
+
+.settlement-amount {
+  font-family: var(--font-main);
+  font-weight: 700;
+  color: var(--clr-secondary);
+}
+
+/* ═══════════════════════════════════════════
+   12. 버튼 스타일 — Pill 형태 (DESIGN.md)
+   ═══════════════════════════════════════════ */
+.btn-finance-primary {
+  background: linear-gradient(135deg, var(--clr-primary), #0088c2);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1.5rem;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-finance-primary:hover {
+  transform: scale(1.02); /* 1.02x scale — DESIGN.md 명세 */
+  box-shadow: var(--shadow-hover);
+  color: #fff;
+}
+
+.btn-finance-outline {
+  border: 1.5px solid var(--clr-primary);
+  color: var(--clr-primary);
+  border-radius: 999px;
+  padding: 0.55rem 1.5rem;
+  font-weight: 600;
+  background: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn-finance-outline:hover {
+  background: var(--clr-surface-container);
+}
+
+/* ═══════════════════════════════════════════
+   13. 폼 컨트롤 커스텀
+   ═══════════════════════════════════════════ */
+.form-control-finance {
+  border: 1.5px solid var(--clr-outline-variant);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control-finance:focus {
+  border-color: var(--clr-primary);
+  box-shadow: 0 0 0 3px rgba(0, 101, 141, 0.15);
+  outline: none;
+}
+
+/* ═══════════════════════════════════════════
+   14. 토스트 알림
+   ═══════════════════════════════════════════ */
+.toast-finance {
+  background: var(--clr-on-surface);
+  color: #fff;
+  border-radius: 0.75rem;
+  min-width: 240px;
+}
+
+/* ═══════════════════════════════════════════
+   15. 애니메이션
+   ═══════════════════════════════════════════ */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* 섹션 진입 애니메이션 */
+.animate-in {
+  animation: slideIn 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════
+   16. 범례 도트 (파이 차트 범례)
+   ═══════════════════════════════════════════ */
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   17. 통계 요약 수치 카드
+   ═══════════════════════════════════════════ */
+.stat-card {
+  background: #fff;
+  border: 1px solid var(--clr-outline-variant);
+  border-radius: 1rem;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+.stat-card .stat-value {
+  font-family: var(--font-main);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--clr-primary);
+  display: block;
+}
+
+.stat-card .stat-label {
+  font-size: 0.8rem;
+  color: var(--clr-on-surface-variant);
+  margin-top: 0.25rem;
+}
+
+/* ═══════════════════════════════════════════
+   18. 반응형 조정
+   ═══════════════════════════════════════════ */
+@media (max-width: 576px) {
+  .card-finance .card-header h2 { font-size: 1rem; }
+  .stat-card .stat-value { font-size: 1.3rem; }
+  .chart-wrapper { max-width: 260px; }
+}
