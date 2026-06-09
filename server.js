@@ -54,8 +54,13 @@ app.post('/api/chat', async (req, res) => {
 
 // 기본 경로 → AI 채팅 페이지
 app.get('/', (req, res) => {
-  res.redirect('/design/html/ai-chat.html');
+  res.sendFile(path.join(__dirname, 'docs', 'design', 'html', 'ai-chat.html'));
 });
+
+// SPA 대비: 없는 경로는 index.html로 (선택)
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'docs', 'design', 'html', 'ai-chat.html'));
+// });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
