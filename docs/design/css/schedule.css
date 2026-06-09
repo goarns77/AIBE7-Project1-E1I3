@@ -1,0 +1,62 @@
+/* ════════════════════════════════════════
+   schedule.css — 여행 일정 관리 페이지 스타일
+   Bootstrap 5 기반, 폰트 적용 외 CSS 최소화 (AGENTS.md 준수)
+════════════════════════════════════════ */
+
+/* ── Pretendard(본문) 폰트 로드 ── */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+
+/* ── Paperlogy(제목) 폰트 로드 ── */
+@font-face {
+  font-family: "Paperlogy";
+  src: url("https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-8ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+
+/* ── 기본 본문 폰트 및 한글 줄바꿈 설정 ── */
+body {
+  font-family: "Pretendard", sans-serif;
+  word-break: keep-all;
+  background-color: #f8f9fa;
+}
+
+/* ── 제목 계열에 Paperlogy 적용 ── */
+h1, h2, h3, h4, h5 {
+  font-family: "Paperlogy", "Pretendard", sans-serif;
+}
+
+/* ── 브랜드 로고 크기 ── */
+.navbar-brand {
+  font-family: "Paperlogy", sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+}
+
+/* ── 일정 카드 hover 효과 ── */
+.schedule-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.schedule-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ── 좋아요 버튼 상태 전환 애니메이션 ── */
+.like-btn {
+  transition: background-color 0.2s ease, color 0.2s ease;
+  min-width: 60px;
+}
+
+/* ── 수정 폼 래퍼 강조 스타일 ── */
+#edit-form-wrapper {
+  border-left: 4px solid #0d6efd;
+  background: #f0f4ff;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+/* ── 미디어 최대 너비 제한 ── */
+img {
+  max-width: 100%;
+}
