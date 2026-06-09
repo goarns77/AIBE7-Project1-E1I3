@@ -202,7 +202,7 @@ function generateAIResponse (query) {
 
 // ────── 서버 API 호출 ──────
 
-const CHAT_API_URL = 'http://localhost:3000/api/chat';
+const CHAT_API_URL = '/api/chat';
 
 // AI 응답 생성 (서버 우선, 실패 시 키워드 fallback)
 async function getAIResponse (text) {

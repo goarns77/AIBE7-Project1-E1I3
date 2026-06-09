@@ -4,10 +4,15 @@ const cors = require('cors');
 const { ChatGoogleGenerativeAI } = require('@langchain/google-genai');
 const { HumanMessage, AIMessage, SystemMessage } = require('@langchain/core/messages');
 
+const path = require('path');
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// 정적 파일 서빙 (docs/)
+app.use(express.static(path.join(__dirname, 'docs')));
 
 const model = new ChatGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -47,7 +52,13 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// 기본 경로 → AI 채팅 페이지
+app.get('/', (req, res) => {
+  res.redirect('/design/html/ai-chat.html');
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`서버 실행 중: http://localhost:${PORT}`);
+  console.log(`AI 채팅 페이지: http://localhost:${PORT}/design/html/ai-chat.html`);
 });
