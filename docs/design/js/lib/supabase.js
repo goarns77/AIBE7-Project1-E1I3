@@ -55,7 +55,8 @@ const _supabase = {
         }
         return { data: { session: { user, access_token: session.access_token } } };
       } catch {
-        return { data: { session } };
+        localStorage.removeItem('sb-session');
+        return { data: { session: null } };
       }
     },
 

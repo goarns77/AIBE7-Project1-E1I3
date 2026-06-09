@@ -79,11 +79,20 @@ body {
   padding: 0.375rem;
   border-radius: 0.5rem;
   transition: background 0.2s;
-  margin-left: auto;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .chat-header-btn:hover {
   background: var(--surface-container);
+}
+
+.chat-header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.25rem;
 }
 
 /* 메시지 영역 */

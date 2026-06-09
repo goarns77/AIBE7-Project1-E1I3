@@ -1,7 +1,8 @@
 const chatMessages = document.querySelector('#chatMessages');
 const chatInput = document.querySelector('#chatInput');
 const sendBtn = document.querySelector('#sendBtn');
-const newChatBtn = document.querySelector('.chat-header-btn');
+const newChatBtn = document.querySelector('#newChatBtn');
+const logoutBtn = document.querySelector('#logoutBtn');
 
 let currentUser = null;
 
@@ -273,7 +274,13 @@ async function initChat () {
   try {
     const { data: { session } } = await _supabase.auth.getSession();
     currentUser = session?.user ?? null;
-  } catch { /* 비로그인 */ }
+  } catch { /* 무시 */ }
+
+  // 로그인하지 않으면 로그인 페이지로 이동
+  if (!currentUser) {
+    window.location.href = '/design/html/login.html';
+    return;
+  }
 
   await loadChatHistory();
 
@@ -281,6 +288,16 @@ async function initChat () {
   if (chatMessages.children.length === 0) {
     addMessage('ai', MSG.chatWelcome);
   }
+}
+
+// ────── 로그아웃 ──────
+
+async function handleLogout () {
+  try {
+    await _supabase.auth.signOut();
+  } catch { /* 무시 */ }
+  localStorage.clear();
+  window.location.href = '/design/html/login.html';
 }
 
 // ────── 새 대화 ──────
@@ -320,6 +337,10 @@ document.querySelectorAll('.chip').forEach((chip) => {
 
 if (newChatBtn) {
   newChatBtn.addEventListener('click', handleNewChat);
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', handleLogout);
 }
 
 initChat();
