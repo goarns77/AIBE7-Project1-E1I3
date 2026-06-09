@@ -144,6 +144,11 @@ async function createVote(roomId, { title, options, createdBy }) {
   return mapVote({ ...vote, vote_options: created.map((o) => ({ ...o, ballots: [] })) });
 }
 
+// 투표 삭제 — DELETE /votes (선택지·표는 FK on delete cascade로 함께 삭제)
+async function deleteVote(roomId, voteId) {
+  return sbDelete(`votes?id=eq.${voteId}`);
+}
+
 // 투표 제출 — POST /ballots (중복은 DB unique 제약으로 차단)
 async function castVote(roomId, voteId, { optionId, memberId }) {
   try {
