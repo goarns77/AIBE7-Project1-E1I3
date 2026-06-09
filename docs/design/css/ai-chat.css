@@ -152,6 +152,31 @@ body {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
+.message-ai .bubble h1,
+.message-ai .bubble h2,
+.message-ai .bubble h3,
+.message-ai .bubble h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0.75rem 0 0.375rem;
+  line-height: 1.3;
+}
+.message-ai .bubble h1:first-child,
+.message-ai .bubble h2:first-child,
+.message-ai .bubble h3:first-child { margin-top: 0; }
+.message-ai .bubble ul,
+.message-ai .bubble ol { padding-left: 1.25rem; margin: 0.25rem 0; }
+.message-ai .bubble li { margin-bottom: 0.125rem; }
+.message-ai .bubble strong { font-weight: 700; }
+.message-ai .bubble hr { margin: 0.75rem 0; border: none; border-top: 1px solid var(--outline-variant); }
+.message-ai .bubble p { margin: 0.25rem 0; }
+.message-ai .bubble blockquote {
+  border-left: 3px solid var(--secondary);
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  color: var(--on-surface-variant);
+}
+
 /* 사용자 말풍선 - Neutral Gray (DESIGN.md) */
 .message-user {
   align-self: flex-end;

@@ -19,6 +19,13 @@ const model = new ChatOpenAI({
   configuration: {
     baseURL: 'https://api.groq.com/openai/v1',
   },
+  model: 'llama-3.1-8b-instant',
+  maxTokens: 1024,
+});
+
+const SYSTEM_PROMPT = `한글로만 답변하세요. 한자, 일본어, 중국어, 영어, 스페인어 등을 절대 사용하지 마세요.
+
+당신은 전문 여행 플래너이자 여행 컨설턴트이며, 다양한 인원이 함께하는 공동 여행 계획 전문가입니다.
   model: 'llama3-70b-8192',
   maxTokens: 1024,
 });

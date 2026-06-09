@@ -49,8 +49,16 @@ function createMessage (type, content) {
   return wrapper;
 }
 
+// ────── 마크다운 렌더링 ──────
+
+function renderMarkdown (text) {
+  if (typeof marked === 'undefined') return text;
+  return marked.parse(text, { breaks: true, gfm: true });
+}
+
 function addMessage (type, content) {
-  const msg = createMessage(type, content);
+  const html = type === 'ai' ? renderMarkdown(content) : content;
+  const msg = createMessage(type, html);
   chatMessages.appendChild(msg);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
