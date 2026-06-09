@@ -109,6 +109,11 @@ async function createRoom({ title, destination, startDate, endDate, host }) {
   return { room: mapRoom({ ...room, members: [me], votes: [], itinerary_items: [] }), me: mapMember(me) };
 }
 
+// 여행방 삭제 — DELETE /rooms (멤버·투표·일정 등 FK on delete cascade로 함께 삭제)
+async function deleteRoom(roomId) {
+  return sbDelete(`rooms?id=eq.${roomId}`);
+}
+
 // 여행방 조회 — GET /rooms (임베딩으로 연관 데이터 한 번에)
 async function getRoom(roomId) {
   // 멤버·투표·선택지·표·일정을 중첩 select로 함께 조회
@@ -122,6 +127,14 @@ async function getRoom(roomId) {
   // 없는 방이면 예외 발생
   if (!rows.length) throw new Error('ROOM_NOT_FOUND');
   return mapRoom(rows[0]);
+}
+
+// 여러 여행방의 요약 정보 조회 — GET /rooms?id=in.(...)
+async function getRoomsBrief(ids) {
+  // 빈 목록이면 즉시 반환
+  if (!ids.length) return [];
+  // id 목록을 in 필터로 한 번에 조회(주최자 판별용 멤버 포함)
+  return sbGet(`rooms?id=in.(${ids.join(',')})&select=id,title,destination,start_date,end_date,members(id,is_host)`);
 }
 
 // 여행방 참여 — POST /members
