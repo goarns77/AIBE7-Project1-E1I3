@@ -53,8 +53,8 @@ function bindStaticListeners() {
   document.querySelector('#add-option').addEventListener('click', addOptionInput);
   // 초대 링크 복사 버튼 핸들러 연결
   document.querySelector('#copy-invite').addEventListener('click', handleCopyInvite);
-  // 장소 검색 폼 제출 핸들러 연결
-  document.querySelector('#poi-form').addEventListener('submit', handleSearch);
+  // [보류] 장소 검색 폼 제출 핸들러 연결
+  // document.querySelector('#poi-form').addEventListener('submit', handleSearch);
 }
 
 // 참여 폼 영역만 노출
@@ -99,10 +99,11 @@ function renderAll() {
   document.querySelector('#join-section').classList.add('d-none');
   document.querySelector('#room-main').classList.remove('d-none');
   renderHeader();
-  renderBoard();
+  // [보류] 일정 보드 렌더링
+  // renderBoard();
   renderVotes();
-  // 지도를 1회 초기화
-  initMapOnce();
+  // [보류] 지도를 1회 초기화
+  // initMapOnce();
 }
 
 // 여행방 헤더(제목/일정/멤버/초대) 렌더링
@@ -281,6 +282,12 @@ async function handleCastVote(event) {
     }
   }
 }
+
+/* ===== [보류] 지도 · 장소 검색 · 일정 보드 (현재 비활성) =====
+   투표 + 초대/공유에 집중하기 위해 이 블록 전체를 일시 주석 처리함.
+   되살리려면 이 블록의 주석을 풀고, bindStaticListeners의 poi-form 연결,
+   renderAll의 renderBoard / initMapOnce 호출, room.html의 관련 섹션과
+   스크립트(map.js)를 함께 복구할 것.
 
 // === 지도 · 장소 검색 · 일정 보드 ===
 
@@ -487,6 +494,8 @@ function refreshMarkers() {
   if (!mapState.ready) return;
   showMarkers(state.room.itinerary || []);
 }
+
+/* ===== [보류] 블록 끝 ===== */
 
 // 여행방을 찾지 못했을 때 오류 화면 표시
 function showError() {
