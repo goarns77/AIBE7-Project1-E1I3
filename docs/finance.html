@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Motrip — 여행 지출 내역을 기록하고 팀원과 정산하세요." />
+  <title>지출 & 정산 — Motrip</title>
+
+  <!-- Bootstrap 5 CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Material Symbols 아이콘 -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
+  <!-- finance 모듈 전용 스타일 -->
+  <link rel="stylesheet" href="./finance/css/finance.css" />
+
+  <!-- Supabase JS SDK v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Chart.js CDN (파이 차트) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ══ 상단 내비게이션 바 (글래스모픽) ══ -->
+  <nav class="navbar navbar-expand-lg navbar-finance sticky-top">
+    <div class="container" style="max-width:1280px;">
+      <!-- 브랜드 로고 -->
+      <a class="navbar-brand brand-logo" href="./index.html">Motrip</a>
+
+      <button class="navbar-toggler border-0" type="button"
+              data-bs-toggle="collapse" data-bs-target="#topnav"
+              aria-label="메뉴 열기">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="topnav">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+          <li class="nav-item"><a class="nav-link" href="./design/html/schedule.html">일정</a></li>
+          <li class="nav-item"><a class="nav-link fw-bold text-primary active" href="./finance.html">지출/정산</a></li>
+          <li class="nav-item"><a class="nav-link" href="./imageupload.html">앨범</a></li>
+          <li class="nav-item"><a class="nav-link" href="./design/html/room.html">여행방</a></li>
+          <li class="nav-item"><a class="nav-link" href="./design/html/ai-chat.html">AI 추천</a></li>
+          <li class="nav-item ms-lg-2">
+            <!-- 로그인 상태 텍스트 -->
+            <span id="user-status" class="small text-secondary me-2"></span>
+          </li>
+          <li class="nav-item">
+            <!-- 로그아웃 버튼 (로그인 시에만 표시) -->
+            <button id="logout-btn" class="btn btn-outline-secondary btn-sm btn-finance-outline d-none">로그아웃</button>
+          </li>
+          <li class="nav-item">
+            <a href="./design/html/login.html" class="btn btn-sm btn-finance-primary">로그인 / 회원가입</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══ 메인 콘텐츠 ══ -->
+  <main class="container py-5" style="max-width:1280px;">
+    <h1 class="mb-1" style="font-size:2rem; font-weight:800; letter-spacing:-0.01em;">💳 지출 & 정산</h1>
+    <p class="text-secondary mb-4">여행 지출을 기록하고, 예산 현황을 확인하며, 팀원과 정산하세요.</p>
+
+    <!-- ── 통계 요약 카드 행 ── -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <span id="stat-total" class="stat-value">₩0</span>
+          <span class="stat-label">총 지출</span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <span id="stat-count" class="stat-value">0건</span>
+          <span class="stat-label">지출 건수</span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <span id="stat-avg" class="stat-value">₩0</span>
+          <span class="stat-label">건당 평균</span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <span id="stat-max" class="stat-value">₩0</span>
+          <span class="stat-label">최대 지출</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+
+      <!-- ────────────────────────────
+           왼쪽 열: 폼 + 예산 + 정산
+           ──────────────────────────── -->
+      <div class="col-12 col-lg-4">
+
+        <!-- 지출 추가 폼 -->
+        <div class="card-finance mb-4">
+          <div class="card-header">
+            <h2 class="h5 mb-0">
+              <span class="material-symbols-outlined align-middle me-1" style="font-size:1.1rem;">add_circle</span>
+              지출 추가
+            </h2>
+          </div>
+          <div class="p-4">
+            <form id="expense-form" novalidate>
+
+              <!-- 날짜 -->
+              <div class="mb-3">
+                <label for="add-date" class="form-label fw-semibold small">📅 날짜</label>
+                <input id="add-date" type="date" name="expense_date"
+                       class="form-control form-control-finance" required />
+              </div>
+
+              <!-- 카테고리 -->
+              <div class="mb-3">
+                <label for="add-category" class="form-label fw-semibold small">🏷 카테고리</label>
+                <select id="add-category" name="category"
+                        class="form-select form-control-finance" required>
+                  <option value="" disabled selected>카테고리 선택</option>
+                  <!-- JS(buildCategoryOptions)가 동적으로 삽입 -->
+                </select>
+              </div>
+
+              <!-- 금액 -->
+              <div class="mb-3">
+                <label for="add-amount" class="form-label fw-semibold small">💰 금액 (₩)</label>
+                <input id="add-amount" type="number" name="amount" min="1"
+                       class="form-control form-control-finance"
+                       placeholder="예: 50000" required />
+              </div>
+
+              <!-- 내용 -->
+              <div class="mb-3">
+                <label for="add-desc" class="form-label fw-semibold small">📝 내용</label>
+                <input id="add-desc" type="text" name="description"
+                       class="form-control form-control-finance"
+                       placeholder="예: 호텔 1박" required />
+              </div>
+
+              <!-- 결제자 (선택) -->
+              <div class="mb-3">
+                <label for="add-payer" class="form-label fw-semibold small">👤 결제자 <span class="text-muted fw-normal">(선택)</span></label>
+                <input id="add-payer" type="text" name="payer"
+                       class="form-control form-control-finance"
+                       placeholder="예: 홍길동" />
+              </div>
+
+              <button type="submit" class="btn btn-finance-primary w-100">지출 추가</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- 지출 수정 폼 (수정 버튼 클릭 시 표시) -->
+        <div id="edit-form-wrapper" class="card-finance mb-4 d-none">
+          <div class="card-header" style="background: linear-gradient(135deg,#006b5f,#009982);">
+            <h2 class="h5 mb-0">✏️ 지출 수정</h2>
+          </div>
+          <div class="p-4">
+            <form id="edit-expense-form" novalidate>
+              <div class="mb-3">
+                <label for="edit-date" class="form-label fw-semibold small">📅 날짜</label>
+                <input id="edit-date" type="date" name="edit-date"
+                       class="form-control form-control-finance" required />
+              </div>
+              <div class="mb-3">
+                <label for="edit-category" class="form-label fw-semibold small">🏷 카테고리</label>
+                <select id="edit-category" name="edit-category"
+                        class="form-select form-control-finance" required>
+                  <option value="" disabled>카테고리 선택</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="edit-amount" class="form-label fw-semibold small">💰 금액 (₩)</label>
+                <input id="edit-amount" type="number" name="edit-amount" min="1"
+                       class="form-control form-control-finance" required />
+              </div>
+              <div class="mb-3">
+                <label for="edit-desc" class="form-label fw-semibold small">📝 내용</label>
+                <input id="edit-desc" type="text" name="edit-description"
+                       class="form-control form-control-finance" required />
+              </div>
+              <div class="mb-3">
+                <label for="edit-payer" class="form-label fw-semibold small">👤 결제자</label>
+                <input id="edit-payer" type="text" name="edit-payer"
+                       class="form-control form-control-finance" />
+              </div>
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-finance-primary flex-grow-1">수정 완료</button>
+                <button type="button" id="edit-cancel-btn" class="btn btn-finance-outline">취소</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- 예산 설정 카드 -->
+        <div class="card-finance mb-4">
+          <div class="card-header" style="background: linear-gradient(135deg,#5c5f61,#7a7e80);">
+            <h2 class="h5 mb-0">🎯 예산 설정</h2>
+          </div>
+          <div class="p-4">
+            <form id="budget-form" novalidate>
+              <div class="mb-3">
+                <label for="budget-input" class="form-label fw-semibold small">총 예산 (₩)</label>
+                <input id="budget-input" type="number" min="1"
+                       class="form-control form-control-finance"
+                       placeholder="예: 1000000" />
+              </div>
+              <button type="submit" class="btn btn-finance-primary w-100">예산 저장</button>
+            </form>
+
+            <!-- 예산 진행률 바 -->
+            <div class="mt-4">
+              <div class="d-flex justify-content-between small mb-1">
+                <span id="budget-pct" class="fw-semibold text-primary">예산 미설정</span>
+                <span id="budget-remain" class="text-muted"></span>
+              </div>
+              <div class="budget-bar-wrap">
+                <div id="budget-bar" class="budget-bar-fill" style="width:0%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 정산 카드 -->
+        <div class="card-finance">
+          <div class="card-header" style="background: linear-gradient(135deg,#006b5f,#00baff);">
+            <h2 class="h5 mb-0">
+              <span class="material-symbols-outlined align-middle me-1" style="font-size:1.1rem;">calculate</span>
+              팀 정산
+            </h2>
+          </div>
+          <div class="p-4">
+            <p class="small text-muted mb-3">결제자별 지출을 균등 정산합니다.</p>
+            <!-- JS(renderSettlement)가 동적으로 삽입 -->
+            <div id="settlement-list"></div>
+          </div>
+        </div>
+
+      </div><!-- /왼쪽 열 -->
+
+      <!-- ────────────────────────────
+           오른쪽 열: 파이 차트 + 목록
+           ──────────────────────────── -->
+      <div class="col-12 col-lg-8">
+
+        <!-- 파이 차트 카드 -->
+        <div class="card-finance mb-4">
+          <div class="card-header">
+            <h2 class="h5 mb-0">
+              <span class="material-symbols-outlined align-middle me-1" style="font-size:1.1rem;">donut_large</span>
+              카테고리별 지출 현황
+            </h2>
+          </div>
+          <div class="p-4">
+            <div class="row g-4 align-items-center">
+              <!-- 도넛 차트 -->
+              <div class="col-12 col-sm-5">
+                <div class="chart-wrapper">
+                  <canvas id="pie-chart" aria-label="카테고리별 지출 파이 차트"></canvas>
+                  <!-- 차트 중앙에 총액 표시 -->
+                  <div class="chart-center-label">
+                    <span id="chart-total" class="total-amount">₩0</span>
+                    <span class="total-label">총 지출</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 커스텀 범례 -->
+              <div class="col-12 col-sm-7">
+                <div id="chart-legend" class="ps-sm-3"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 지출 내역 목록 카드 -->
+        <div class="card-finance">
+          <div class="card-header">
+            <div class="d-flex align-items-center justify-content-between">
+              <h2 class="h5 mb-0">
+                <span class="material-symbols-outlined align-middle me-1" style="font-size:1.1rem;">receipt_long</span>
+                지출 내역
+              </h2>
+              <!-- 내역 건수 배지 -->
+              <span class="badge rounded-pill" style="background:rgba(255,255,255,0.25);" id="expense-count-badge">0건</span>
+            </div>
+          </div>
+          <div class="p-0">
+            <!-- JS(renderExpenseList)가 동적으로 삽입 -->
+            <div id="expense-list">
+              <p class="text-center text-muted py-4">지출 내역을 불러오는 중...</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /오른쪽 열 -->
+
+    </div><!-- /row -->
+  </main>
+
+  <!-- ══ 푸터 ══ -->
+  <footer class="py-5 mt-5 border-top bg-white">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"
+         style="max-width:1280px;">
+      <div class="text-center text-md-start">
+        <div class="brand-logo fs-4">Motrip</div>
+        <p class="text-secondary small mb-0">© 2026 모여행 · 함께 떠나는 여행 계획</p>
+      </div>
+      <div class="d-flex gap-4 small">
+        <a class="link-secondary text-decoration-none" href="#">서비스 소개</a>
+        <a class="link-secondary text-decoration-none" href="#">개인정보처리방침</a>
+        <a class="link-secondary text-decoration-none" href="#">이용약관</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 토스트 알림 -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="toast" class="toast toast-finance align-items-center border-0" role="alert" aria-live="assertive">
+      <div class="d-flex">
+        <div class="toast-body fw-semibold"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="닫기"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS (Toast, Collapse 포함) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- 메시지 상수 먼저 로드 -->
+  <script src="./finance/js/msg.js"></script>
+  <!-- Supabase 클라이언트 초기화 (타 모듈과 동일한 URL/Key) -->
+  <script src="./finance/js/supabase-client.js"></script>
+  <!-- finance 모듈 메인 로직 -->
+  <script src="./finance/js/finance.js"></script>
+
+</body>
+</html>
