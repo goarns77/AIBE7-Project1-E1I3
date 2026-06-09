@@ -19,7 +19,7 @@ const model = new ChatOpenAI({
   configuration: {
     baseURL: 'https://api.groq.com/openai/v1',
   },
-  model: 'llama-3.1-8b-instant',
+  model: 'qwen/qwen3-32b',
   maxTokens: 1024,
 });
 
@@ -224,8 +224,13 @@ app.post('/api/chat', async (req, res) => {
 
     console.log('Groq API 호출 중...');
     const result = await model.invoke(messages);
+    let responseText = result.content;
+    // Qwen thinking 태그 제거
+    responseText = responseText.replace(/<think>[\s\S]*?<\/think>/g, '');
+    responseText = responseText.replace(/<think>[\s\S]*$/g, '');
+    responseText = responseText.trim();
     console.log('Groq 응답 성공');
-    res.json({ response: result.content });
+    res.json({ response: responseText });
   } catch (err) {
     console.error('Groq API 오류 상세:', err);
     res.status(500).json({
