@@ -200,6 +200,45 @@ function generateAIResponse (query) {
     `예시: ${hintStr}`;
 }
 
+// ────── 서버 API 호출 ──────
+
+const CHAT_API_URL = '/api/chat';
+
+// AI 응답 생성 (서버 우선, 실패 시 키워드 fallback)
+async function getAIResponse (text) {
+  try {
+    const res = await fetch(CHAT_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        history: _messageBuffer.slice(-10) // 최근 10개만 컨텍스트로 전달
+      })
+    });
+    if (!res.ok) throw new Error('API 응답 오류');
+    const data = await res.json();
+    return data.response;
+  } catch {
+    return generateAIResponse(text); // 서버 오프라인 시 키워드 fallback
+  }
+}
+
+// 로딩 인디케이터 (점점 애니메이션)
+let _loadingEl = null;
+
+function showLoading () {
+  _loadingEl = createMessage('ai', '<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>');
+  chatMessages.appendChild(_loadingEl);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function hideLoading () {
+  if (_loadingEl) {
+    _loadingEl.remove();
+    _loadingEl = null;
+  }
+}
+
 // ────── 메시지 전송 ──────
 
 async function sendMessage () {
@@ -212,12 +251,20 @@ async function sendMessage () {
   saveToSupabase('user', text);
   chatInput.value = '';
 
+  // 로딩 표시
+  showLoading();
+
   // AI 응답
-  const aiHtml = generateAIResponse(text);
-  const aiText = aiHtml.replace(/<[^>]+>/g, '');
-  addMessage('ai', aiHtml);
-  pushMessage('assistant', aiText, aiHtml);
-  saveToSupabase('assistant', aiText, aiHtml);
+  try {
+    const aiText = await getAIResponse(text);
+    hideLoading();
+    addMessage('ai', aiText);
+    pushMessage('assistant', aiText);
+    saveToSupabase('assistant', aiText);
+  } catch {
+    hideLoading();
+    addMessage('ai', MSG.chatError);
+  }
 }
 
 // ────── 초기화 ──────
