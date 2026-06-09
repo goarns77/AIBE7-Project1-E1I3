@@ -82,6 +82,8 @@ const MSG = {
     titleRequired: '투표 주제를 입력해 주세요.',
     optionRequired: '선택지를 2개 이상 입력해 주세요.',
     alreadyVoted: '이미 참여한 투표예요.',
+    deleteConfirm: '이 투표를 삭제할까요?',
+    deleted: '투표를 삭제했어요.',
   },
   // 지도·장소 검색 관련 문구
   map: {

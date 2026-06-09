@@ -53,8 +53,8 @@ function bindStaticListeners() {
   document.querySelector('#add-option').addEventListener('click', addOptionInput);
   // 초대 링크 복사 버튼 핸들러 연결
   document.querySelector('#copy-invite').addEventListener('click', handleCopyInvite);
-  // [보류] 장소 검색 폼 제출 핸들러 연결
-  // document.querySelector('#poi-form').addEventListener('submit', handleSearch);
+  // 장소 검색 폼 제출 핸들러 연결
+  document.querySelector('#poi-form').addEventListener('submit', handleSearch);
 }
 
 // 참여 폼 영역만 노출
@@ -99,11 +99,11 @@ function renderAll() {
   document.querySelector('#join-section').classList.add('d-none');
   document.querySelector('#room-main').classList.remove('d-none');
   renderHeader();
-  // [보류] 일정 보드 렌더링
-  // renderBoard();
+  // 일정 보드 렌더링
+  renderBoard();
   renderVotes();
-  // [보류] 지도를 1회 초기화
-  // initMapOnce();
+  // 지도를 1회 초기화
+  initMapOnce();
 }
 
 // 여행방 헤더(제목/일정/멤버/초대) 렌더링
@@ -205,15 +205,20 @@ function renderVotes() {
   // 각 투표를 카드 마크업으로 변환
   list.innerHTML = votes.map(renderVoteCard).join('');
 
-  // 선택지 버튼에 투표 핸들러 연결
-  list.querySelectorAll('[data-vote]').forEach((btn) => {
+  // 선택지 버튼에 투표 핸들러 연결(data-option 보유)
+  list.querySelectorAll('[data-option]').forEach((btn) => {
     btn.addEventListener('click', handleCastVote);
+  });
+
+  // 투표 삭제 버튼 핸들러 연결
+  list.querySelectorAll('.vote-delete').forEach((btn) => {
+    btn.addEventListener('click', handleDeleteVote);
   });
 }
 
 // 단일 투표 카드 마크업 생성
 function renderVoteCard(vote) {
-  const { id, title, options } = vote;
+  const { id, title, options, createdBy } = vote;
 
   // 전체 득표 수 합산
   const total = options.reduce((sum, o) => sum + o.voterIds.length, 0);
@@ -221,13 +226,23 @@ function renderVoteCard(vote) {
   // 본인이 이미 투표했는지 확인
   const voted = options.some((o) => o.voterIds.includes(state.meId));
 
+  // 작성자 본인에게만 삭제 버튼 노출
+  const delBtn = createdBy === state.meId
+    ? `<button class="btn btn-sm btn-link text-secondary p-0 vote-delete" data-vote="${id}" title="투표 삭제">
+        <span class="material-symbols-outlined" style="font-size:1.1rem;">delete</span>
+      </button>`
+    : '';
+
   // 선택지별 막대 그래프 행 생성
   const rows = options.map((o) => renderOptionRow(id, o, total, voted)).join('');
 
   return `
     <div class="card mb-3">
       <div class="card-body">
-        <h3 class="h5 mb-3">${escapeHtml(title)}</h3>
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <h3 class="h5 mb-0">${escapeHtml(title)}</h3>
+          ${delBtn}
+        </div>
         ${rows}
         <p class="text-secondary small mb-0 mt-2">총 ${total}표</p>
       </div>
@@ -283,11 +298,24 @@ async function handleCastVote(event) {
   }
 }
 
-/* ===== [보류] 지도 · 장소 검색 · 일정 보드 (현재 비활성) =====
-   투표 + 초대/공유에 집중하기 위해 이 블록 전체를 일시 주석 처리함.
-   되살리려면 이 블록의 주석을 풀고, bindStaticListeners의 poi-form 연결,
-   renderAll의 renderBoard / initMapOnce 호출, room.html의 관련 섹션과
-   스크립트(map.js)를 함께 복구할 것.
+// 투표 삭제 버튼 핸들러
+async function handleDeleteVote(event) {
+  // 삭제할 투표 ID 추출
+  const { vote: voteId } = event.currentTarget.dataset;
+
+  // 사용자에게 삭제 확인
+  if (!confirm(MSG.vote.deleteConfirm)) return;
+
+  try {
+    // 투표 삭제 API 호출 후 화면 갱신
+    await deleteVote(state.room.id, voteId);
+    state.room = await getRoom(state.room.id);
+    showToast(MSG.vote.deleted);
+    renderVotes();
+  } catch (err) {
+    showToast(MSG.common.networkError);
+  }
+}
 
 // === 지도 · 장소 검색 · 일정 보드 ===
 
@@ -494,8 +522,6 @@ function refreshMarkers() {
   if (!mapState.ready) return;
   showMarkers(state.room.itinerary || []);
 }
-
-/* ===== [보류] 블록 끝 ===== */
 
 // 여행방을 찾지 못했을 때 오류 화면 표시
 function showError() {
