@@ -114,8 +114,8 @@ async function getRoom(roomId) {
   // 멤버·투표·선택지·표·일정을 중첩 select로 함께 조회
   const select = 'id,title,destination,start_date,end_date,invite_code,'
     + 'members(id,nickname,is_host),'
-    + 'votes(id,title,created_by,vote_options(id,label,ballots(member_id)))';
-  // [보류] 일정 임베딩 비활성: + ',itinerary_items(id,day,place_name,address,x,y)'
+    + 'votes(id,title,created_by,vote_options(id,label,ballots(member_id))),'
+    + 'itinerary_items(id,day,place_name,address,x,y)';
 
   const rows = await sbGet(`rooms?id=eq.${roomId}&select=${select}`);
 
@@ -144,6 +144,11 @@ async function createVote(roomId, { title, options, createdBy }) {
   return mapVote({ ...vote, vote_options: created.map((o) => ({ ...o, ballots: [] })) });
 }
 
+// 투표 삭제 — DELETE /votes (선택지·표는 FK on delete cascade로 함께 삭제)
+async function deleteVote(roomId, voteId) {
+  return sbDelete(`votes?id=eq.${voteId}`);
+}
+
 // 투표 제출 — POST /ballots (중복은 DB unique 제약으로 차단)
 async function castVote(roomId, voteId, { optionId, memberId }) {
   try {
@@ -157,7 +162,6 @@ async function castVote(roomId, voteId, { optionId, memberId }) {
   return true;
 }
 
-/* ===== [보류] 일정(itinerary) 함수 — 현재 비활성 =====
 // 일정에 장소 추가 — POST /itinerary_items
 async function addItineraryItem(roomId, { day, placeName, address, x, y }) {
   // 일정 항목 행 생성 후 매핑 반환
@@ -171,4 +175,3 @@ async function addItineraryItem(roomId, { day, placeName, address, x, y }) {
 async function removeItineraryItem(roomId, itemId) {
   return sbDelete(`itinerary_items?id=eq.${itemId}`);
 }
-===== [보류] 끝 ===== */
