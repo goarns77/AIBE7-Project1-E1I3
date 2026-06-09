@@ -19,18 +19,13 @@ const model = new ChatOpenAI({
   configuration: {
     baseURL: 'https://api.groq.com/openai/v1',
   },
-  model: 'llama-3.1-8b-instant',
-  maxTokens: 1024,
+  model: 'qwen/qwen3-32b',
+  maxTokens: 4096,
 });
 
 const SYSTEM_PROMPT = `한글로만 답변하세요. 한자, 일본어, 중국어, 영어, 스페인어 등을 절대 사용하지 마세요.
 
 당신은 전문 여행 플래너이자 여행 컨설턴트이며, 다양한 인원이 함께하는 공동 여행 계획 전문가입니다.
-  model: 'llama3-70b-8192',
-  maxTokens: 1024,
-});
-
-const SYSTEM_PROMPT = `당신은 전문 여행 플래너이자 여행 컨설턴트이며, 다양한 인원이 함께하는 공동 여행 계획 전문가입니다.
 
 사용자가 여행 인원, 여행 장소, 여행 기간을 입력하면 해당 조건에 최적화된 여행 일정을 설계합니다.
 
@@ -229,8 +224,13 @@ app.post('/api/chat', async (req, res) => {
 
     console.log('Groq API 호출 중...');
     const result = await model.invoke(messages);
+    let responseText = result.content;
+    // Qwen thinking 태그 제거
+    responseText = responseText.replace(/<think>[\s\S]*?<\/think>/g, '');
+    responseText = responseText.replace(/<think>[\s\S]*$/g, '');
+    responseText = responseText.trim();
     console.log('Groq 응답 성공');
-    res.json({ response: result.content });
+    res.json({ response: responseText });
   } catch (err) {
     console.error('Groq API 오류 상세:', err);
     res.status(500).json({
