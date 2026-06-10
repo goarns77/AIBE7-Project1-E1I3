@@ -50,6 +50,8 @@ async function init() {
 
     // 마지막 방문 방 ID 저장 (AI 추천 갔다가 돌아올 때 사용)
     localStorage.setItem('motrip:lastRoomId', roomId);
+    // 로고 클릭 시 현재 방 유지
+    document.querySelector('.navbar-brand').href = '?roomId=' + roomId;
     // 참여자는 전체 화면을 렌더링
     renderAll();
   } catch (err) {
