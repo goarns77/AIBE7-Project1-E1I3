@@ -43,6 +43,24 @@ const userStatusEl = document.querySelector("#user-status");
 /** 로그아웃 버튼 */
 const logoutBtn = document.querySelector("#logout-btn");
 
+/** 마지막으로 불러온 일정 목록 (지도 마커 동기화용) */
+let lastSchedules = [];
+
+/**
+ * 좌표가 있는 일정을 지도에 마커로 표시한다.
+ * map.js가 로드된 room 통합 화면에서만 동작(standalone에선 안전하게 건너뜀).
+ * @param {Array} list - 일정 배열
+ */
+function renderScheduleMarkers(list) {
+  // map.js 미로드거나 지도 미준비면 건너뜀(typeof는 미선언에도 안전)
+  if (typeof showMarkers !== "function" || typeof mapState === "undefined" || !mapState.ready) return;
+  // 좌표가 있는 일정만 마커 데이터로 변환
+  const located = (list || [])
+    .filter((s) => s.place_x && s.place_y)
+    .map((s) => ({ x: s.place_x, y: s.place_y, place_name: s.place_name }));
+  showMarkers(located);
+}
+
 /* ══════════════════════════════════════════
    인증 상태 감지 및 UI 초기화
 ══════════════════════════════════════════ */
@@ -97,6 +115,10 @@ async function renderSchedules() {
     .order("trip_time", { ascending: true });
 
   if (error) return showToast(MSG.schedule.loadFail, "danger");
+
+  // 최신 목록 보관 후 지도 마커 동기화
+  lastSchedules = schedules || [];
+  renderScheduleMarkers(lastSchedules);
 
   // 기존 목록 초기화 후 재렌더링
   scheduleList.innerHTML = "";
@@ -167,6 +189,8 @@ async function buildScheduleCard(schedule, user) {
           ♥ <span class="like-count">${likeCount ?? 0}</span>
         </button>
       </div>
+      <!-- 위치(지도에서 추가한 장소) -->
+      ${schedule.place_name ? `<p class="card-text small mt-2 mb-0 schedule-place text-primary">📍 ${escapeHtml(schedule.place_name)}</p>` : ""}
       <!-- 일정 내용 -->
       <p class="card-text mt-2 mb-1 schedule-content">${escapeHtml(schedule.content)}</p>
       <!-- 본인 일정에만 수정·삭제 버튼 표시 -->
@@ -219,16 +243,20 @@ async function addHandler(event) {
   const trip_date = formData.get("trip_date");
   const trip_time = formData.get("trip_time");
   const content   = formData.get("content");
+  // 위치(지도에서 추가한 장소) — 선택 항목
+  const place_name = formData.get("place_name")?.trim() || null;
+  const place_x    = formData.get("place_x") || null;
+  const place_y    = formData.get("place_y") || null;
 
   // 필수 입력값 검증
   if (!trip_date || !trip_time || !content.trim()) {
     return showToast(MSG.schedule.inputRequired, "warning");
   }
 
-  // Supabase에 일정 삽입
+  // Supabase에 일정 삽입(위치 포함)
   const { error } = await supabaseClient
     .from("schedules")
-    .insert({ trip_date, trip_time, content: content.trim(), user_id: user.id });
+    .insert({ trip_date, trip_time, content: content.trim(), user_id: user.id, place_name, place_x, place_y });
 
   if (error) return showToast(MSG.schedule.addFail, "danger");
 
