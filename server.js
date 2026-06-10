@@ -105,7 +105,7 @@ app.post('/api/chat', async (req, res) => {
 
 // 기본 경로 → 홈
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'docs', 'index.html'));
+  res.sendFile(path.join(__dirname, 'docs', 'design', 'html', 'index.html'));
 });
 
 // SPA 대비: 없는 경로는 index.html로 (선택)
