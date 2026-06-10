@@ -3,6 +3,16 @@ const emailInput = document.querySelector('#email');
 const passwordInput = document.querySelector('#password');
 const submitBtn = document.querySelector('#loginForm .btn-login');
 
+// 로그인 후 이동할 경로 결정 (기존 방 있으면 room.html, 없으면 room-create.html)
+function redirectAfterLogin() {
+  const rooms = getMyRooms();
+  if (rooms.length) {
+    window.location.href = 'room.html?roomId=' + rooms[0];
+  } else {
+    window.location.href = 'room-create.html';
+  }
+}
+
 // OAuth 로그인 처리
 function handleOAuth (provider) {
   _supabase.auth.signInWithOAuth({
@@ -40,7 +50,7 @@ async function handleLogin (e) {
 
     if (data.session) {
       alert(MSG.loginSuccess);
-      window.location.href = 'room-create.html';
+      redirectAfterLogin();
     }
   } catch {
     alert(MSG.networkError);
@@ -56,6 +66,6 @@ loginForm.addEventListener('submit', handleLogin);
 (function checkOAuthCallback () {
   const session = _supabase.auth._handleOAuthCallback();
   if (session) {
-    window.location.href = 'room-create.html';
+    redirectAfterLogin();
   }
 })();

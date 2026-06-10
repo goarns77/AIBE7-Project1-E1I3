@@ -265,10 +265,13 @@
           document.getElementById('ctaLogin').style.display = 'none';
           document.getElementById('ctaLoggedIn').style.display = 'inline-flex';
 
-          // Bottom CTA
-          const ctaBottom = document.getElementById('ctaBottom');
-          ctaBottom.href = '/design/html/room-create.html';
-          ctaBottom.textContent = '✈️ 여행방 만들기';
+          // 기존 방이 있으면 room.html로, 없으면 room-create.html로
+          const myRooms = JSON.parse(localStorage.getItem('motrip:myRooms') || '[]');
+          const roomTarget = myRooms.length ? '/design/html/room.html?roomId=' + myRooms[0] : '/design/html/room-create.html';
+          document.querySelector('.btn-nav-room').href = roomTarget;
+          document.getElementById('ctaLoggedIn').href = roomTarget;
+          document.getElementById('ctaBottom').href = roomTarget;
+          document.getElementById('ctaBottom').textContent = '✈️ 여행방 만들기';
         }
       } catch (err) {
         console.log('Auth check skipped:', err.message);
