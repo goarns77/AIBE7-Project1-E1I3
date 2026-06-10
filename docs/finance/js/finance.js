@@ -75,11 +75,23 @@ const statAvg       = document.querySelector('#stat-avg');
 const statMax       = document.querySelector('#stat-max');
 
 /* ═══════════════════════════════
-   초기화 — DOMContentLoaded 진입점
+   초기화 — DOMContentLoaded / 외부(room.js) 호출
    ═══════════════════════════════ */
-document.addEventListener('DOMContentLoaded', initFinance);
+
+// 중복 초기화 방지
+let _finInitialized = false;
+
+// DOMContentLoaded 자동 시작 + room.js에서도 재호출 가능
+document.addEventListener('DOMContentLoaded', () => { initFinance(); });
 
 async function initFinance() {
+  // 이미 완전 초기화된 경우 데이터만 갱신(룸 전환 대응)
+  if (_finInitialized) {
+    await loadBudget();
+    await loadExpenses();
+    return;
+  }
+
   // 현재 로그인 세션 확인
   await checkAuthState();
   // Supabase 인증 상태 변경 구독 (로그인/로그아웃 감지)
@@ -98,6 +110,8 @@ async function initFinance() {
   finEditForm.addEventListener('submit', handleEditExpense);
   finEditCancelBtn.addEventListener('click', cancelEdit);
   finLogoutBtn.addEventListener('click', handleLogout);
+
+  _finInitialized = true;
 }
 
 /* ═══════════════════════════════
