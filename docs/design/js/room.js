@@ -36,6 +36,8 @@ async function init() {
       return;
     }
 
+    // 멤버인 방을 내 여행 목록에 기록
+    rememberRoom(roomId);
     // 참여자는 전체 화면을 렌더링
     renderAll();
   } catch (err) {
@@ -53,6 +55,8 @@ function bindStaticListeners() {
   document.querySelector('#add-option').addEventListener('click', addOptionInput);
   // 초대 링크 복사 버튼 핸들러 연결
   document.querySelector('#copy-invite').addEventListener('click', handleCopyInvite);
+  // 여행방 삭제 버튼 핸들러 연결
+  document.querySelector('#delete-room').addEventListener('click', handleDeleteRoom);
   // 장소 검색 폼 제출 핸들러 연결
   document.querySelector('#poi-form').addEventListener('submit', handleSearch);
 }
@@ -84,6 +88,8 @@ async function handleJoin(event) {
     const me = await joinRoom(state.room.id, { nickname });
     localStorage.setItem(meKey(state.room.id), me.id);
     state.meId = me.id;
+    // 참여한 방을 내 여행 목록에 기록
+    rememberRoom(state.room.id);
     // 최신 방 정보를 다시 조회
     state.room = await getRoom(state.room.id);
     showToast(MSG.room.joinSuccess);
@@ -98,12 +104,100 @@ function renderAll() {
   // 메인 영역만 보이도록 토글
   document.querySelector('#join-section').classList.add('d-none');
   document.querySelector('#room-main').classList.remove('d-none');
+  // 내 여행 대시보드 렌더링
+  renderDashboard();
   renderHeader();
   // 일정 보드 렌더링
   renderBoard();
   renderVotes();
   // 지도를 1회 초기화
   initMapOnce();
+}
+
+// 내 여행 대시보드(여러 여행 카드) 렌더링
+async function renderDashboard() {
+  const wrap = document.querySelector('#dashboard');
+
+  // 내 여행 목록 ID를 조회
+  const ids = getMyRooms();
+
+  // 목록이 없으면 안내 후 종료
+  if (!ids.length) {
+    wrap.innerHTML = '<p class="text-secondary small mb-0">아직 등록된 여행이 없어요.</p>';
+    return;
+  }
+
+  try {
+    // 여러 방의 요약 정보를 한 번에 조회
+    const rooms = await getRoomsBrief(ids);
+    // 각 방을 카드로 변환(현재 방 강조, 클릭 이동, 주최자만 삭제 버튼)
+    wrap.innerHTML = rooms
+      .map((r) => {
+        const active = r.id === state.room.id;
+        const badge = active ? ' <span class="badge text-bg-primary">현재</span>' : '';
+        const period = `${r.start_date || '?'} ~ ${r.end_date || '?'}`;
+        // 이 방에서 내 멤버가 주최자인지 확인
+        const myMemId = localStorage.getItem(meKey(r.id));
+        const isHost = (r.members || []).some((m) => m.id === myMemId && m.is_host);
+        const delBtn = isHost
+          ? `<button class="btn btn-sm btn-link text-danger p-0 dash-delete" data-room="${r.id}" title="여행방 삭제">
+              <span class="material-symbols-outlined" style="font-size:1rem;">close</span>
+            </button>`
+          : '';
+        return `
+          <div class="dash-card p-3 rounded-3 border bg-white ${active ? 'border-primary' : ''}" data-room="${r.id}" style="min-width:190px; cursor:pointer;">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="fw-semibold text-truncate" style="max-width:150px;">${escapeHtml(r.title)}${badge}</div>
+              ${delBtn}
+            </div>
+            <div class="text-secondary small">${escapeHtml(r.destination || '목적지 미정')}</div>
+            <div class="text-secondary small">${escapeHtml(period)}</div>
+          </div>`;
+      })
+      .join('');
+
+    // 카드 클릭 → 이동, 삭제 버튼 → 삭제
+    wrap.querySelectorAll('.dash-card').forEach((c) => c.addEventListener('click', handleDashNavigate));
+    wrap.querySelectorAll('.dash-delete').forEach((b) => b.addEventListener('click', handleDashDelete));
+  } catch (err) {
+    // 조회 실패 시 안내
+    wrap.innerHTML = '<p class="text-secondary small mb-0">여행 목록을 불러오지 못했어요.</p>';
+  }
+}
+
+// 대시보드 카드 클릭 — 해당 여행방으로 이동
+function handleDashNavigate(event) {
+  // 카드의 방 ID로 이동
+  const { room } = event.currentTarget.dataset;
+  location.href = `?roomId=${room}`;
+}
+
+// 대시보드 카드의 삭제 버튼 핸들러
+async function handleDashDelete(event) {
+  // 카드 이동 이벤트 차단
+  event.stopPropagation();
+
+  // 되돌릴 수 없는 작업이므로 확인
+  if (!confirm(MSG.room.deleteConfirm)) return;
+
+  const { room } = event.currentTarget.dataset;
+
+  try {
+    // 여행방 삭제 후 로컬 흔적 제거
+    await deleteRoom(room);
+    forgetRoom(room);
+    localStorage.removeItem(meKey(room));
+
+    // 현재 보던 방을 지웠으면 이동, 아니면 대시보드만 갱신
+    if (room === state.room.id) {
+      const rest = getMyRooms();
+      location.href = rest.length ? `?roomId=${rest[0]}` : './room-create.html';
+    } else {
+      renderDashboard();
+    }
+  } catch (err) {
+    showToast(MSG.common.networkError);
+  }
 }
 
 // 여행방 헤더(제목/일정/멤버/초대) 렌더링
@@ -121,6 +215,10 @@ function renderHeader() {
 
   // 초대 링크 구성 후 입력 칸에 표시
   document.querySelector('#invite-link').value = buildInviteLink(id, inviteCode);
+
+  // 주최자(host)에게만 여행방 삭제 버튼 노출
+  const isHost = members.some((m) => m.id === state.meId && m.isHost);
+  document.querySelector('#delete-room').classList.toggle('d-none', !isHost);
 }
 
 // 초대 링크 문자열 생성
@@ -133,6 +231,27 @@ function handleCopyInvite() {
   // 입력 칸의 링크를 클립보드로 복사
   const link = document.querySelector('#invite-link').value;
   copyToClipboard(link, MSG.common.copySuccess, MSG.common.copyFail);
+}
+
+// 여행방 삭제 버튼 핸들러
+async function handleDeleteRoom() {
+  // 되돌릴 수 없는 작업이므로 확인
+  if (!confirm(MSG.room.deleteConfirm)) return;
+
+  const roomId = state.room.id;
+
+  try {
+    // 여행방 삭제(연관 데이터 cascade) 후 로컬 흔적 제거
+    await deleteRoom(roomId);
+    forgetRoom(roomId);
+    localStorage.removeItem(meKey(roomId));
+
+    // 남은 여행이 있으면 그 방으로, 없으면 생성 페이지로 이동
+    const rest = getMyRooms();
+    location.href = rest.length ? `?roomId=${rest[0]}` : './room-create.html';
+  } catch (err) {
+    showToast(MSG.common.networkError);
+  }
 }
 
 // 투표 생성 submit 핸들러

@@ -63,6 +63,19 @@
     <!-- 여행방 메인 -->
     <section id="room-main" class="d-none">
 
+      <!-- 내 여행 대시보드 -->
+      <div class="card rounded-4xl mb-4">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h5 mb-0"><span class="material-symbols-outlined text-primary">dashboard</span> 내 여행</h2>
+            <a href="./room-create.html" class="btn btn-primary btn-pill btn-sm px-3">
+              <span class="material-symbols-outlined">add</span> 새 여행
+            </a>
+          </div>
+          <div id="dashboard" class="d-flex gap-3 flex-wrap" style="overflow-x:auto;"></div>
+        </div>
+      </div>
+
       <!-- 여행방 헤더 -->
       <div class="card rounded-4xl mb-4">
         <div class="card-body p-4 p-md-5">
@@ -87,6 +100,13 @@
             <input id="invite-link" class="form-control input-soft p-3" readonly>
             <button id="copy-invite" class="btn btn-teal btn-pill px-4 ms-2" type="button">
               <span class="material-symbols-outlined">share</span> 공유
+            </button>
+          </div>
+
+          <!-- 여행방 삭제 (주최자만 노출) -->
+          <div class="text-end mt-3">
+            <button id="delete-room" class="btn btn-sm btn-link text-danger text-decoration-none d-none" type="button">
+              <span class="material-symbols-outlined" style="font-size:1rem;">delete_forever</span> 여행방 삭제
             </button>
           </div>
         </div>

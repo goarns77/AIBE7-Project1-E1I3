@@ -55,8 +55,36 @@ const _supabase = {
         }
         return { data: { session: { user, access_token: session.access_token } } };
       } catch {
-        return { data: { session } };
+        localStorage.removeItem('sb-session');
+        return { data: { session: null } };
       }
+    },
+
+    /** OAuth 로그인 (Google, Kakao 등) */
+    signInWithOAuth ({ provider, redirectTo }) {
+      const redirect = redirectTo || window.location.origin + '/design/html/login.html';
+      const url = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(redirect)}`;
+      window.location.href = url;
+    },
+
+    /** OAuth 콜백 - URL hash에서 세션 추출 */
+    _handleOAuthCallback () {
+      const hash = window.location.hash;
+      if (!hash || !hash.includes('access_token')) return null;
+      const params = new URLSearchParams(hash.replace('#', ''));
+      const session = {
+        access_token: params.get('access_token'),
+        refresh_token: params.get('refresh_token'),
+        expires_in: params.get('expires_in'),
+        token_type: params.get('token_type'),
+        user: { id: params.get('provider_refresh_token') ? null : null }
+      };
+      if (session.access_token) {
+        localStorage.setItem('sb-session', JSON.stringify(session));
+        window.location.hash = '';
+        return session;
+      }
+      return null;
     },
 
     /** 로그아웃 */

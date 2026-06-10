@@ -1,7 +1,8 @@
 const chatMessages = document.querySelector('#chatMessages');
 const chatInput = document.querySelector('#chatInput');
 const sendBtn = document.querySelector('#sendBtn');
-const newChatBtn = document.querySelector('.chat-header-btn');
+const newChatBtn = document.querySelector('#newChatBtn');
+const logoutBtn = document.querySelector('#logoutBtn');
 
 let currentUser = null;
 
@@ -48,8 +49,16 @@ function createMessage (type, content) {
   return wrapper;
 }
 
+// ────── 마크다운 렌더링 ──────
+
+function renderMarkdown (text) {
+  if (typeof marked === 'undefined') return text;
+  return marked.parse(text, { breaks: true, gfm: true });
+}
+
 function addMessage (type, content) {
-  const msg = createMessage(type, content);
+  const html = type === 'ai' ? renderMarkdown(content) : content;
+  const msg = createMessage(type, html);
   chatMessages.appendChild(msg);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
@@ -193,7 +202,7 @@ function generateAIResponse (query) {
     }
   }
 
-  const hints = ['국내 여행', '해외 여향', '힐링 여행', '맛집 여행', '액티비티', '가족 여행'];
+  const hints = ['국내 여행', '해외 여행', '힐링 여행', '맛집 여행', '액티비티', '가족 여행'];
   const hintStr = hints.map(h => `"${h}"`).join(', ');
   return `좋은 여행을 계획 중이시군요! 😊<br><br>` +
     `취향에 맞는 키워드를 알려주시면<br>더 정확히 추천해드릴게요.<br><br>` +
@@ -273,7 +282,13 @@ async function initChat () {
   try {
     const { data: { session } } = await _supabase.auth.getSession();
     currentUser = session?.user ?? null;
-  } catch { /* 비로그인 */ }
+  } catch { /* 무시 */ }
+
+  // 로그인하지 않으면 로그인 페이지로 이동
+  if (!currentUser) {
+    window.location.href = '/design/html/login.html';
+    return;
+  }
 
   await loadChatHistory();
 
@@ -281,6 +296,16 @@ async function initChat () {
   if (chatMessages.children.length === 0) {
     addMessage('ai', MSG.chatWelcome);
   }
+}
+
+// ────── 로그아웃 ──────
+
+async function handleLogout () {
+  try {
+    await _supabase.auth.signOut();
+  } catch { /* 무시 */ }
+  localStorage.clear();
+  window.location.href = '/design/html/login.html';
 }
 
 // ────── 새 대화 ──────
@@ -320,6 +345,10 @@ document.querySelectorAll('.chip').forEach((chip) => {
 
 if (newChatBtn) {
   newChatBtn.addEventListener('click', handleNewChat);
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', handleLogout);
 }
 
 initChat();
