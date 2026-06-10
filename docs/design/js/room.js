@@ -107,10 +107,8 @@ function renderAll() {
   // 내 여행 대시보드 렌더링
   renderDashboard();
   renderHeader();
-  // 일정 보드 렌더링
-  renderBoard();
   renderVotes();
-  // 지도를 1회 초기화
+  // 지도를 1회 초기화 (일정은 schedule 모듈 iframe이 담당)
   initMapOnce();
 }
 
@@ -436,54 +434,22 @@ async function handleDeleteVote(event) {
   }
 }
 
-// === 지도 · 장소 검색 · 일정 보드 ===
+// === 지도 · 장소 검색 (지도 API 유지, 일정은 schedule 모듈로 분리) ===
 
 // 지도 1회 초기화 여부 플래그
 let mapInitialized = false;
 
-// 지도를 1회만 로드하고 준비되면 마커 갱신
+// 지도를 1회만 로드
 function initMapOnce() {
   // 이미 초기화됐으면 중복 실행 방지
   if (mapInitialized) return;
   mapInitialized = true;
-  // 지도 로드 후 일정 마커 표시
-  loadKakaoMap('#map', () => refreshMarkers());
-}
-
-// 여행 날짜로 Day 컬럼 목록을 생성(+미정)
-function getDays(room) {
-  const { startDate, endDate } = room;
-  const days = [];
-
-  // 출발~도착 날짜가 모두 있으면 일자별 컬럼 생성
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    let i = 0;
-    // 하루씩 증가시키며 최대 14일까지 생성
-    for (let d = new Date(start); d <= end && i < 14; d.setDate(d.getDate() + 1)) {
-      days.push({ key: `d${i}`, label: `Day ${i + 1}`, date: `${d.getMonth() + 1}/${d.getDate()}` });
-      i += 1;
+  // 지도 로드 후, 좌표가 있는 일정을 마커로 표시(schedule 모듈 연동)
+  loadKakaoMap('#map', () => {
+    if (typeof renderScheduleMarkers === 'function') {
+      renderScheduleMarkers(typeof lastSchedules !== 'undefined' ? lastSchedules : []);
     }
-  }
-
-  // 날짜가 없으면 기본 2일 컬럼 제공
-  if (!days.length) {
-    days.push({ key: 'd0', label: 'Day 1', date: '' });
-    days.push({ key: 'd1', label: 'Day 2', date: '' });
-  }
-
-  // 미정 컬럼 추가
-  days.push({ key: 'unscheduled', label: '미정', date: '' });
-  return days;
-}
-
-// Day 선택 드롭다운 옵션 마크업 생성
-function dayOptionsHtml() {
-  // 각 Day를 option으로 변환
-  return getDays(state.room)
-    .map((d) => `<option value="${d.key}">${escapeHtml(d.label)}${d.date ? ` (${escapeHtml(d.date)})` : ''}</option>`)
-    .join('');
+  });
 }
 
 // 장소 검색 submit 핸들러
@@ -503,7 +469,7 @@ function handleSearch(event) {
   searchPlaces(keyword, renderPoiResults);
 }
 
-// 검색 결과를 추가 버튼·Day 선택과 함께 렌더링
+// 검색 결과를 목록·지도 마커로 렌더링
 function renderPoiResults(places) {
   // 결과가 없으면 안내 후 종료
   if (!places.length) {
@@ -511,47 +477,34 @@ function renderPoiResults(places) {
     return;
   }
 
-  const list = document.querySelector('#poi-list');
-  const dayOpts = dayOptionsHtml();
+  // 검색 결과를 지도에 마커로 표시
+  showMarkers(places);
 
-  // 각 장소를 카드(이름·주소·Day선택·추가)로 변환(XSS 방지 이스케이프)
+  const list = document.querySelector('#poi-list');
+
+  // 각 장소를 카드(이름·주소·지도보기·일정추가)로 변환(XSS 방지 이스케이프)
   list.innerHTML = places
     .map((p) => `
       <div class="p-3 bg-white rounded-3 shadow-sm mb-2 poi-card"
            data-x="${escapeHtml(p.x)}" data-y="${escapeHtml(p.y)}"
            data-name="${escapeHtml(p.place_name)}"
            data-address="${escapeHtml(p.road_address_name || p.address_name)}">
-        <div class="fw-semibold poi-locate" role="button">${escapeHtml(p.place_name)}</div>
+        <div class="fw-semibold">${escapeHtml(p.place_name)}</div>
         <div class="text-secondary small mb-2">${escapeHtml(p.road_address_name || p.address_name)}</div>
         <div class="d-flex gap-2">
-          <select class="form-select form-select-sm poi-day">${dayOpts}</select>
-          <button class="btn btn-sm btn-primary btn-pill px-3 poi-add" type="button">추가</button>
+          <button class="btn btn-sm btn-outline-primary btn-pill px-3 poi-locate" type="button">
+            <span class="material-symbols-outlined" style="font-size:1rem;">location_on</span> 지도
+          </button>
+          <button class="btn btn-sm btn-primary btn-pill px-3 poi-add-sch" type="button">
+            <span class="material-symbols-outlined" style="font-size:1rem;">add</span> 일정에 추가
+          </button>
         </div>
       </div>`)
     .join('');
 
-  // 추가·위치보기 핸들러 연결
-  list.querySelectorAll('.poi-add').forEach((b) => b.addEventListener('click', handleAddPlace));
+  // 지도 보기·일정 추가 버튼 핸들러 연결
   list.querySelectorAll('.poi-locate').forEach((b) => b.addEventListener('click', handleLocatePoi));
-}
-
-// 검색 결과 장소를 선택한 Day에 추가
-async function handleAddPlace(event) {
-  // 카드 데이터와 선택된 Day 추출
-  const card = event.currentTarget.closest('.poi-card');
-  const { x, y, name, address } = card.dataset;
-  const day = card.querySelector('.poi-day').value;
-
-  try {
-    // 일정 추가 API 호출 후 화면·마커 갱신
-    await addItineraryItem(state.room.id, { day, placeName: name, address, x, y });
-    state.room = await getRoom(state.room.id);
-    showToast(MSG.itinerary.added);
-    renderBoard();
-    refreshMarkers();
-  } catch (err) {
-    showToast(MSG.common.networkError);
-  }
+  list.querySelectorAll('.poi-add-sch').forEach((b) => b.addEventListener('click', handleAddPoiToSchedule));
 }
 
 // 검색 결과 클릭 시 지도 중심 이동
@@ -561,85 +514,23 @@ function handleLocatePoi(event) {
   panTo(x, y);
 }
 
-// Day별 일정 보드 렌더링
-function renderBoard() {
-  const board = document.querySelector('#itinerary-board');
-  const days = getDays(state.room);
-  const items = state.room.itinerary || [];
+// 검색한 장소를 일정 '위치' 필드에 채우고 폼으로 이동(등록은 schedule 모듈이 담당)
+function handleAddPoiToSchedule(event) {
+  // 카드에서 장소명·주소·좌표 추출
+  const { name, address, x, y } = event.currentTarget.closest('.poi-card').dataset;
 
-  // 각 Day를 컬럼으로 변환
-  board.innerHTML = days
-    .map((d) => {
-      // 해당 Day의 항목만 추려 카드로 변환
-      const dayItems = items.filter((it) => it.day === d.key);
-      const cards = dayItems.map(renderItineraryCard).join('') ||
-        `<p class="text-secondary small mb-0">${MSG.itinerary.empty}</p>`;
-      // 미정 컬럼은 색상 구분
-      const extra = d.key === 'unscheduled' ? ' unscheduled' : '';
-      return `
-        <div class="col-md">
-          <div class="board-col${extra} rounded-4xl p-3 h-100">
-            <div class="fw-bold text-primary mb-3">
-              ${escapeHtml(d.label)} <span class="text-secondary small fw-normal">${escapeHtml(d.date)}</span>
-            </div>
-            ${cards}
-          </div>
-        </div>`;
-    })
-    .join('');
+  // 위치 필드와 좌표 hidden 입력 채움
+  const placeEl = document.querySelector('#sch-add-place');
+  if (!placeEl) return;
+  placeEl.value = address ? `${name} (${address})` : name;
+  document.querySelector('#sch-add-x').value = x;
+  document.querySelector('#sch-add-y').value = y;
 
-  // 삭제·위치보기 핸들러 연결
-  board.querySelectorAll('.item-remove').forEach((b) => b.addEventListener('click', handleRemovePlace));
-  board.querySelectorAll('.item-locate').forEach((b) => b.addEventListener('click', handleLocateItem));
-}
+  // 일정 추가 폼으로 스크롤
+  document.querySelector('#add-schedule-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-// 일정 항목 카드 마크업 생성
-function renderItineraryCard(item) {
-  const { id, placeName, address, x, y } = item;
-  return `
-    <div class="bg-white p-3 rounded-3 shadow-sm mb-2 item-card" data-x="${escapeHtml(x)}" data-y="${escapeHtml(y)}">
-      <div class="d-flex justify-content-between align-items-start">
-        <div class="fw-semibold">${escapeHtml(placeName)}</div>
-        <button class="btn btn-sm btn-link text-secondary p-0 item-remove" data-id="${escapeHtml(id)}" title="삭제">
-          <span class="material-symbols-outlined" style="font-size:1.1rem;">close</span>
-        </button>
-      </div>
-      <div class="text-secondary small mb-2">${escapeHtml(address)}</div>
-      <button class="btn btn-sm btn-outline-primary btn-pill px-3 item-locate" type="button">
-        <span class="material-symbols-outlined" style="font-size:1rem;">location_on</span> 지도에서 보기
-      </button>
-    </div>`;
-}
-
-// 일정 항목 삭제
-async function handleRemovePlace(event) {
-  // 삭제 대상 ID 추출
-  const { id } = event.currentTarget.dataset;
-
-  try {
-    // 일정 제거 API 호출 후 화면·마커 갱신
-    await removeItineraryItem(state.room.id, id);
-    state.room = await getRoom(state.room.id);
-    showToast(MSG.itinerary.removed);
-    renderBoard();
-    refreshMarkers();
-  } catch (err) {
-    showToast(MSG.common.networkError);
-  }
-}
-
-// 일정 항목 클릭 시 지도 중심 이동
-function handleLocateItem(event) {
-  // 항목 좌표로 지도 이동
-  const { x, y } = event.currentTarget.closest('.item-card').dataset;
-  panTo(x, y);
-}
-
-// 일정에 담긴 장소를 지도 마커로 갱신
-function refreshMarkers() {
-  // 지도가 준비된 경우에만 마커 표시
-  if (!mapState.ready) return;
-  showMarkers(state.room.itinerary || []);
+  // 날짜·시간 입력 안내
+  showToast(MSG.map.addedToForm);
 }
 
 // 여행방을 찾지 못했을 때 오류 화면 표시

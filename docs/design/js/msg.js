@@ -91,11 +91,39 @@ const MSG = {
     searchEmpty: '검색어를 입력해 주세요.',
     noResult: '검색 결과가 없어요.',
     sdkError: '지도를 불러오지 못했어요. 도메인 등록을 확인해 주세요.',
+    addedToForm: '일정 내용에 장소를 담았어요. 날짜·시간을 정해 추가하세요.',
   },
   // 일정 보드 관련 문구
   itinerary: {
     added: '일정에 추가했어요.',
     removed: '일정에서 제거했어요.',
     empty: '아직 없음',
+  },
+  // 지출 내역(finance 모듈)
+  expense: {
+    loadFail: '지출 내역을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    addSuccess: '지출 내역이 추가되었습니다.',
+    addFail: '지출 내역 추가에 실패했습니다.',
+    editSuccess: '지출 내역이 수정되었습니다.',
+    editFail: '지출 내역 수정에 실패했습니다.',
+    deleteFail: '지출 내역 삭제에 실패했습니다.',
+    deleteConfirm: '이 지출 내역을 삭제하시겠습니까?',
+    noData: '등록된 지출 내역이 없습니다.',
+    inputRequired: '날짜, 카테고리, 금액, 내용을 모두 입력해 주세요.',
+    amountInvalid: '금액은 0보다 큰 숫자를 입력해 주세요.',
+  },
+  // 예산(finance 모듈)
+  budget: {
+    loadFail: '예산 정보를 불러오지 못했습니다.',
+    saveSuccess: '예산이 저장되었습니다.',
+    saveFail: '예산 저장에 실패했습니다.',
+    inputRequired: '예산 금액을 입력해 주세요.',
+    exceeded: '⚠️ 예산을 초과했습니다!',
+  },
+  // 정산(finance 모듈)
+  settlement: {
+    loadFail: '정산 정보를 불러오지 못했습니다.',
+    noExpense: '정산할 지출 내역이 없습니다.',
+    perfect: '✅ 모두 균등하게 지출했습니다!',
   },
 };

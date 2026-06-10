@@ -14,6 +14,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <!-- Material Symbols 아이콘 -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
+  <!-- room 공통 테마(폰트·색 일관성) -->
+  <link rel="stylesheet" href="./design/css/room.css" />
   <!-- finance 모듈 전용 스타일 -->
   <link rel="stylesheet" href="./finance/css/finance.css" />
 
@@ -24,40 +26,11 @@
 </head>
 <body>
 
-  <!-- ══ 상단 내비게이션 바 (글래스모픽) ══ -->
-  <nav class="navbar navbar-expand-lg navbar-finance sticky-top">
-    <div class="container" style="max-width:1280px;">
-      <!-- 브랜드 로고 -->
-      <a class="navbar-brand brand-logo" href="./index.html">Motrip</a>
-
-      <button class="navbar-toggler border-0" type="button"
-              data-bs-toggle="collapse" data-bs-target="#topnav"
-              aria-label="메뉴 열기">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="topnav">
-        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-          <li class="nav-item"><a class="nav-link" href="./design/html/schedule.html">일정</a></li>
-          <li class="nav-item"><a class="nav-link fw-bold text-primary active" href="./finance.html">지출/정산</a></li>
-          <li class="nav-item"><a class="nav-link" href="./imageupload.html">앨범</a></li>
-          <li class="nav-item"><a class="nav-link" href="./design/html/room.html">여행방</a></li>
-          <li class="nav-item"><a class="nav-link" href="./design/html/ai-chat.html">AI 추천</a></li>
-          <li class="nav-item ms-lg-2">
-            <!-- 로그인 상태 텍스트 -->
-            <span id="user-status" class="small text-secondary me-2"></span>
-          </li>
-          <li class="nav-item">
-            <!-- 로그아웃 버튼 (로그인 시에만 표시) -->
-            <button id="logout-btn" class="btn btn-outline-secondary btn-sm btn-finance-outline d-none">로그아웃</button>
-          </li>
-          <li class="nav-item">
-            <a href="./design/html/login.html" class="btn btn-sm btn-finance-primary">로그인 / 회원가입</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
+  <!-- nav 제거(room.html에 통합). 로직 유지를 위해 상태 요소만 숨겨서 보존 -->
+  <div class="d-none">
+    <span id="user-status"></span>
+    <button id="logout-btn"></button>
+  </div>
 
   <!-- ══ 메인 콘텐츠 ══ -->
   <main class="container py-5" style="max-width:1280px;">
@@ -302,22 +275,6 @@
 
     </div><!-- /row -->
   </main>
-
-  <!-- ══ 푸터 ══ -->
-  <footer class="py-5 mt-5 border-top bg-white">
-    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"
-         style="max-width:1280px;">
-      <div class="text-center text-md-start">
-        <div class="brand-logo fs-4">Motrip</div>
-        <p class="text-secondary small mb-0">© 2026 모여행 · 함께 떠나는 여행 계획</p>
-      </div>
-      <div class="d-flex gap-4 small">
-        <a class="link-secondary text-decoration-none" href="#">서비스 소개</a>
-        <a class="link-secondary text-decoration-none" href="#">개인정보처리방침</a>
-        <a class="link-secondary text-decoration-none" href="#">이용약관</a>
-      </div>
-    </div>
-  </footer>
 
   <!-- 토스트 알림 -->
   <div class="toast-container position-fixed bottom-0 end-0 p-3">
