@@ -10,9 +10,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Room CSS (includes Pretendard, Paperlogy font-face & design tokens) -->
-  <link rel="stylesheet" href="./design/css/room.css">
+  <link rel="stylesheet" href="/design/css/room.css">
   <!-- Landing Page CSS -->
-  <link rel="stylesheet" href="./design/css/index.css">
+  <link rel="stylesheet" href="/design/css/index.css">
 </head>
 <body>
 
@@ -27,23 +27,23 @@
   <nav class="navbar-glass" id="navbar">
     <div class="navbar-inner">
       <a class="navbar-brand" href="/">
-        <img src="./design/images/motrip-logo.png" alt="Motrip 로고">
+        <img src="/design/images/motrip-logo.png" alt="Motrip 로고">
       </a>
 
       <div class="nav-actions">
         <!-- 비로그인 상태 -->
         <div class="auth-logged-out" id="authLoggedOut">
-          <a href="./design/html/login.html" class="btn-nav-login">
+          <a href="/design/html/login.html" class="btn-nav-login">
             로그인
           </a>
-          <a href="./design/html/signup.html" class="btn-nav-signup">
+          <a href="/design/html/signup.html" class="btn-nav-signup">
             회원가입
           </a>
         </div>
 
         <!-- 로그인 상태 -->
         <div class="auth-logged-in" id="authLoggedIn">
-          <a href="./design/html/room-create.html" class="btn-nav-room">
+          <a href="/design/html/room-create.html" class="btn-nav-room">
             ✈️ 여행방 만들기
           </a>
           <div class="user-avatar" id="userAvatar" title="내 프로필"></div>
@@ -76,13 +76,13 @@
 
         <div class="hero-cta-group">
           <!-- 비로그인: 회원가입으로 / 로그인: 여행방 만들기로 -->
-          <a href="./design/html/signup.html" class="btn-hero-primary auth-cta-logout" id="ctaLoggedOut">
+          <a href="/design/html/signup.html" class="btn-hero-primary auth-cta-logout" id="ctaLoggedOut">
             🚀 무료로 시작하기
           </a>
-          <a href="./design/html/room-create.html" class="btn-hero-primary auth-cta-login" id="ctaLoggedIn" style="display:none;">
+          <a href="/design/html/room-create.html" class="btn-hero-primary auth-cta-login" id="ctaLoggedIn" style="display:none;">
             ✈️ 여행방 만들기
           </a>
-          <a href="./design/html/login.html" class="btn-hero-secondary auth-cta-logout-2" id="ctaLogin">
+          <a href="/design/html/login.html" class="btn-hero-secondary auth-cta-logout-2" id="ctaLogin">
             이미 계정이 있으신가요?
           </a>
         </div>
@@ -107,7 +107,7 @@
       <!-- Hero Visual -->
       <div class="hero-visual">
         <img
-          src="./design/images/motrip-banner.png"
+          src="/design/images/motrip-banner.png"
           alt="Motrip - 모두가 함께 떠나는 여행, 모여행"
           class="hero-banner-img"
         >
@@ -198,7 +198,7 @@
     <div class="cta-card">
       <h2>지금 바로 여행을 계획해보세요 ✈️</h2>
       <p>가입은 무료, 친구 초대도 간편하게. 모여행과 함께라면 어디든 즐거워요!</p>
-      <a href="./design/html/signup.html" class="btn-cta" id="ctaBottom">
+      <a href="/design/html/signup.html" class="btn-cta" id="ctaBottom">
         🚀 무료로 시작하기
       </a>
     </div>
@@ -209,7 +209,7 @@
     <div class="footer-inner">
       <div>
         <div class="footer-brand">
-          <img src="./design/images/motrip-logo.png" alt="Motrip 로고">
+          <img src="/design/images/motrip-logo.png" alt="Motrip 로고">
         </div>
         <p class="footer-copy" style="margin-top:0.5rem;">© 2026 모여행 · 함께 떠나는 여행 계획</p>
       </div>
@@ -222,7 +222,7 @@
   </footer>
 
   <!-- Supabase for auth state check -->
-  <script src="./design/js/lib/supabase.js"></script>
+  <script src="/design/js/lib/supabase.js"></script>
   <script>
     // ===== Navbar scroll effect =====
     const navbar = document.getElementById('navbar');
@@ -267,7 +267,7 @@
 
           // Bottom CTA
           const ctaBottom = document.getElementById('ctaBottom');
-          ctaBottom.href = './design/html/room-create.html';
+          ctaBottom.href = '/design/html/room-create.html';
           ctaBottom.textContent = '✈️ 여행방 만들기';
         }
       } catch (err) {
@@ -285,7 +285,7 @@
         document.getElementById('ctaLoggedIn').style.display = 'none';
 
         const ctaBottom = document.getElementById('ctaBottom');
-        ctaBottom.href = './design/html/signup.html';
+        ctaBottom.href = '/design/html/signup.html';
         ctaBottom.textContent = '🚀 무료로 시작하기';
       } catch (err) {
         console.error('Logout error:', err);
