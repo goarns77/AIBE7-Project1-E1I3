@@ -89,17 +89,13 @@ function mapRoom(row) {
 // === Auth 헬퍼 ===
 
 // 현재 로그인한 Supabase 사용자 ID 반환
-async function getCurrentUserId() {
+function getCurrentUserId() {
+  // localStorage에 저장된 세션에서 직접 조회 (모든 페이지에서 동작)
   try {
-    if (typeof supabaseClient !== 'undefined') {
-      const { data } = await supabaseClient.auth.getUser();
-      if (data?.user?.id) return data.user.id;
-    }
-  } catch (e) {}
-  try {
-    if (typeof _supabase !== 'undefined') {
-      const { data } = await _supabase.auth.getSession();
-      if (data?.session?.user?.id) return data.session.user.id;
+    const raw = localStorage.getItem('sb-session');
+    if (raw) {
+      const session = JSON.parse(raw);
+      if (session?.user?.id) return session.user.id;
     }
   } catch (e) {}
   return null;
