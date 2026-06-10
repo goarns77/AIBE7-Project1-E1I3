@@ -40,7 +40,7 @@ async function handleLogin (e) {
 
     if (data.session) {
       alert(MSG.loginSuccess);
-      window.location.href = 'ai-chat.html';
+      window.location.href = 'room-create.html';
     }
   } catch {
     alert(MSG.networkError);
@@ -56,6 +56,6 @@ loginForm.addEventListener('submit', handleLogin);
 (function checkOAuthCallback () {
   const session = _supabase.auth._handleOAuthCallback();
   if (session) {
-    window.location.href = 'ai-chat.html';
+    window.location.href = 'room-create.html';
   }
 })();
