@@ -222,7 +222,16 @@
   </footer>
 
   <!-- Supabase for auth state check -->
-  <script src="/design/js/lib/supabase.js"></script>
+  <script src="./design/js/lib/supabase.js"></script>
+  <script>
+    // 로그인 상태면 room-create.html로 리다이렉트 (user_id 기반 방 목록은 페이지 진입 후 확인)
+    (function () {
+      const session = JSON.parse(localStorage.getItem('sb-session'));
+      if (session?.access_token) {
+        location.href = '/design/html/room-create.html';
+      }
+    })();
+  </script>
   <script>
     // ===== Navbar scroll effect =====
     const navbar = document.getElementById('navbar');
@@ -265,10 +274,13 @@
           document.getElementById('ctaLogin').style.display = 'none';
           document.getElementById('ctaLoggedIn').style.display = 'inline-flex';
 
-          // Bottom CTA
-          const ctaBottom = document.getElementById('ctaBottom');
-          ctaBottom.href = '/design/html/room-create.html';
-          ctaBottom.textContent = '✈️ 여행방 만들기';
+          // 기존 방이 있으면 room.html로, 없으면 room-create.html로
+          const myRooms = JSON.parse(localStorage.getItem('motrip:myRooms') || '[]');
+          const roomTarget = myRooms.length ? '/design/html/room.html?roomId=' + myRooms[0] : '/design/html/room-create.html';
+          document.querySelector('.btn-nav-room').href = roomTarget;
+          document.getElementById('ctaLoggedIn').href = roomTarget;
+          document.getElementById('ctaBottom').href = roomTarget;
+          document.getElementById('ctaBottom').textContent = '✈️ 여행방 만들기';
         }
       } catch (err) {
         console.log('Auth check skipped:', err.message);

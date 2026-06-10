@@ -30,8 +30,6 @@ async function handleCreate(event) {
     const { room, me } = await createRoom({ title: tripTitle, destination, startDate, endDate, host });
     // 생성자 본인을 멤버로 기억
     localStorage.setItem(`motrip:me:${room.id}`, me.id);
-    // 내 여행 목록(대시보드)에 추가
-    rememberRoom(room.id);
     // 결과 영역 렌더링
     renderResult(room);
     showToast(MSG.room.createSuccess);
