@@ -122,8 +122,6 @@ function renderAll() {
   renderVotes();
   // 지도를 1회 초기화 (일정은 schedule 모듈 iframe이 담당)
   initMapOnce();
-  // 정산 모듈 초기화
-  if (typeof initFinance === 'function') initFinance();
 }
 
 // 내 여행 대시보드(여러 여행 카드) 렌더링

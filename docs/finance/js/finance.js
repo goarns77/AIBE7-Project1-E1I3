@@ -80,6 +80,7 @@ const statMax       = document.querySelector('#stat-max');
 
 // 중복 초기화 방지
 let _finInitialized = false;
+let _finInitializing = false;
 
 // DOMContentLoaded 자동 시작 + room.js에서도 재호출 가능
 document.addEventListener('DOMContentLoaded', () => { initFinance(); });
@@ -91,7 +92,16 @@ async function initFinance() {
     await loadExpenses();
     return;
   }
+  // 첫 번째 초기화가 진행 중이면 중복 실행 방지
+  if (_finInitializing) return;
+  _finInitializing = true;
 
+  // 이벤트 핸들러는 async 로드 전에 먼저 등록(폼 제출 차단)
+  expenseForm.addEventListener('submit', handleAddExpense);
+  budgetForm.addEventListener('submit', handleSaveBudget);
+  finEditForm.addEventListener('submit', handleEditExpense);
+  finEditCancelBtn.addEventListener('click', cancelEdit);
+  finLogoutBtn.addEventListener('click', handleLogout);
   // 현재 로그인 세션 확인
   try { await checkAuthState(); } catch {}
   // Supabase 인증 상태 변경 구독 (로그인/로그아웃 감지)
@@ -103,12 +113,6 @@ async function initFinance() {
   } catch {}
   // 카테고리 select 옵션 동적 생성
   buildCategoryOptions();
-  // 이벤트 핸들러는 async 로드 전에 먼저 등록(폼 제출 차단)
-  expenseForm.addEventListener('submit', handleAddExpense);
-  budgetForm.addEventListener('submit', handleSaveBudget);
-  finEditForm.addEventListener('submit', handleEditExpense);
-  finEditCancelBtn.addEventListener('click', cancelEdit);
-  finLogoutBtn.addEventListener('click', handleLogout);
   // 예산 및 지출 내역 로드
   await loadBudget();
   await loadExpenses();
