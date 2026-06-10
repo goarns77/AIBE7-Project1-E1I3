@@ -3,6 +3,14 @@ const emailInput = document.querySelector('#email');
 const passwordInput = document.querySelector('#password');
 const submitBtn = document.querySelector('#loginForm .btn-login');
 
+// OAuth 로그인 처리
+function handleOAuth (provider) {
+  _supabase.auth.signInWithOAuth({
+    provider,
+    redirectTo: window.location.origin + '/design/html/login.html'
+  });
+}
+
 // 로그인 폼 제출 처리
 async function handleLogin (e) {
   e.preventDefault();
@@ -32,7 +40,6 @@ async function handleLogin (e) {
 
     if (data.session) {
       alert(MSG.loginSuccess);
-      // 리다이렉트 또는 메인 페이지 이동
       window.location.href = 'ai-chat.html';
     }
   } catch {
@@ -44,3 +51,11 @@ async function handleLogin (e) {
 }
 
 loginForm.addEventListener('submit', handleLogin);
+
+// OAuth 콜백 확인 (페이지 로드 시 URL hash에 access_token이 있으면 세션 저장 후 리다이렉트)
+(function checkOAuthCallback () {
+  const session = _supabase.auth._handleOAuthCallback();
+  if (session) {
+    window.location.href = 'ai-chat.html';
+  }
+})();
