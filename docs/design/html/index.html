@@ -224,16 +224,11 @@
   <!-- Supabase for auth state check -->
   <script src="./design/js/lib/supabase.js"></script>
   <script>
-    // 로그인 상태면 room.html로 리다이렉트
+    // 로그인 상태면 room-create.html로 리다이렉트 (user_id 기반 방 목록은 페이지 진입 후 확인)
     (function () {
       const session = JSON.parse(localStorage.getItem('sb-session'));
       if (session?.access_token) {
-        const myRooms = JSON.parse(localStorage.getItem('motrip:myRooms') || '[]');
-        if (myRooms.length) {
-          location.href = '/design/html/room.html?roomId=' + myRooms[0];
-        } else {
-          location.href = '/design/html/room-create.html';
-        }
+        location.href = '/design/html/room-create.html';
       }
     })();
   </script>

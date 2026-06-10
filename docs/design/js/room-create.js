@@ -4,7 +4,15 @@
 document.addEventListener('DOMContentLoaded', init);
 
 // 초기화 — 폼·복사 버튼 이벤트 바인딩
-function init() {
+async function init() {
+  // 이미 가지고 있는 방이 있으면 바로 room.html로 이동
+  try {
+    const rooms = await getUserRooms();
+    if (rooms.length) {
+      location.href = 'room.html?roomId=' + rooms[0].id;
+      return;
+    }
+  } catch {}
   // 여행방 생성 폼 제출 핸들러 연결
   document.querySelector('#create-form').addEventListener('submit', handleCreate);
   // 초대 링크 복사 버튼 핸들러 연결
