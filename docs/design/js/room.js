@@ -14,10 +14,22 @@ document.addEventListener('DOMContentLoaded', init);
 // 여행방 화면 초기화
 async function init() {
   // URL 쿼리에서 여행방 ID 추출
-  const { roomId } = Object.fromEntries(new URLSearchParams(location.search));
+  let { roomId } = Object.fromEntries(new URLSearchParams(location.search));
 
-  // ID가 없으면 오류 화면 표시
+  // ID가 없으면 마지막 방문 방 → 사용자 방 목록 순으로 리다이렉트
   if (!roomId) {
+    const lastId = localStorage.getItem('motrip:lastRoomId');
+    if (lastId) {
+      location.replace('?roomId=' + lastId);
+      return;
+    }
+    try {
+      const rooms = await getUserRooms();
+      if (rooms.length) {
+        location.replace('?roomId=' + rooms[0].id);
+        return;
+      }
+    } catch {}
     showError();
     return;
   }
@@ -36,6 +48,8 @@ async function init() {
       return;
     }
 
+    // 마지막 방문 방 ID 저장 (AI 추천 갔다가 돌아올 때 사용)
+    localStorage.setItem('motrip:lastRoomId', roomId);
     // 참여자는 전체 화면을 렌더링
     renderAll();
   } catch (err) {
