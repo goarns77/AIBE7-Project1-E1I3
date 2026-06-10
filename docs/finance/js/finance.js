@@ -93,23 +93,25 @@ async function initFinance() {
   }
 
   // 현재 로그인 세션 확인
-  await checkAuthState();
+  try { await checkAuthState(); } catch {}
   // Supabase 인증 상태 변경 구독 (로그인/로그아웃 감지)
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
-    currentUser = session?.user ?? null;
-    renderAuthUI();
-  });
+  try {
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+      currentUser = session?.user ?? null;
+      renderAuthUI();
+    });
+  } catch {}
   // 카테고리 select 옵션 동적 생성
   buildCategoryOptions();
-  // 예산 및 지출 내역 로드
-  await loadBudget();
-  await loadExpenses();
-  // 이벤트 핸들러 등록
+  // 이벤트 핸들러는 async 로드 전에 먼저 등록(폼 제출 차단)
   expenseForm.addEventListener('submit', handleAddExpense);
   budgetForm.addEventListener('submit', handleSaveBudget);
   finEditForm.addEventListener('submit', handleEditExpense);
   finEditCancelBtn.addEventListener('click', cancelEdit);
   finLogoutBtn.addEventListener('click', handleLogout);
+  // 예산 및 지출 내역 로드
+  await loadBudget();
+  await loadExpenses();
 
   _finInitialized = true;
 }
