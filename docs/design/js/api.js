@@ -86,12 +86,47 @@ function mapRoom(row) {
   };
 }
 
+// === Auth 헬퍼 ===
+
+// 현재 로그인한 Supabase 사용자 ID 반환
+async function getCurrentUserId() {
+  try {
+    if (typeof supabaseClient !== 'undefined') {
+      const { data } = await supabaseClient.auth.getUser();
+      if (data?.user?.id) return data.user.id;
+    }
+  } catch (e) {}
+  try {
+    if (typeof _supabase !== 'undefined') {
+      const { data } = await _supabase.auth.getSession();
+      if (data?.session?.user?.id) return data.session.user.id;
+    }
+  } catch (e) {}
+  return null;
+}
+
+// 로그아웃 처리
+async function logout() {
+  try {
+    if (typeof supabaseClient !== 'undefined') {
+      await supabaseClient.auth.signOut();
+    }
+    if (typeof _supabase !== 'undefined') {
+      await _supabase.auth.signOut();
+    }
+  } catch (e) {}
+  localStorage.removeItem('sb-session');
+  window.location.href = '/design/html/index.html';
+}
+
 // === API 함수 ===
 
 // 여행방 생성 — POST /rooms (+ 주최자 멤버 등록)
 async function createRoom({ title, destination, startDate, endDate, host }) {
   // 초대 코드 생성
   const inviteCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+  // 현재 로그인한 사용자 ID
+  const userId = await getCurrentUserId();
 
   // 여행방 행 생성
   const [room] = await sbInsert('rooms', {
@@ -102,8 +137,13 @@ async function createRoom({ title, destination, startDate, endDate, host }) {
     invite_code: inviteCode,
   });
 
-  // 주최자를 첫 멤버로 등록
-  const [me] = await sbInsert('members', { room_id: room.id, nickname: host || '주최자', is_host: true });
+  // 주최자를 첫 멤버로 등록 (user_id 함께 저장)
+  const [me] = await sbInsert('members', {
+    room_id: room.id,
+    nickname: host || '주최자',
+    is_host: true,
+    user_id: userId,
+  });
 
   // 생성 직후 화면용 객체로 매핑해 반환
   return { room: mapRoom({ ...room, members: [me], votes: [], itinerary_items: [] }), me: mapMember(me) };
@@ -129,6 +169,16 @@ async function getRoom(roomId) {
   return mapRoom(rows[0]);
 }
 
+// 현재 사용자가 멤버인 모든 여행방 조회
+async function getUserRooms() {
+  const userId = await getCurrentUserId();
+  if (!userId) return [];
+  const members = await sbGet(`members?user_id=eq.${userId}&select=room_id`);
+  const roomIds = members.map(m => m.room_id);
+  if (!roomIds.length) return [];
+  return getRoomsBrief(roomIds);
+}
+
 // 여러 여행방의 요약 정보 조회 — GET /rooms?id=in.(...)
 async function getRoomsBrief(ids) {
   // 빈 목록이면 즉시 반환
@@ -139,8 +189,9 @@ async function getRoomsBrief(ids) {
 
 // 여행방 참여 — POST /members
 async function joinRoom(roomId, { nickname }) {
-  // 새 멤버 행 생성 후 매핑 반환
-  const [member] = await sbInsert('members', { room_id: roomId, nickname, is_host: false });
+  const userId = await getCurrentUserId();
+  // 새 멤버 행 생성 후 매핑 반환 (user_id 함께 저장)
+  const [member] = await sbInsert('members', { room_id: roomId, nickname, is_host: false, user_id: userId });
   return mapMember(member);
 }
 

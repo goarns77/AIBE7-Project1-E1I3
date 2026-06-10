@@ -36,8 +36,6 @@ async function init() {
       return;
     }
 
-    // 멤버인 방을 내 여행 목록에 기록
-    rememberRoom(roomId);
     // 참여자는 전체 화면을 렌더링
     renderAll();
   } catch (err) {
@@ -88,8 +86,6 @@ async function handleJoin(event) {
     const me = await joinRoom(state.room.id, { nickname });
     localStorage.setItem(meKey(state.room.id), me.id);
     state.meId = me.id;
-    // 참여한 방을 내 여행 목록에 기록
-    rememberRoom(state.room.id);
     // 최신 방 정보를 다시 조회
     state.room = await getRoom(state.room.id);
     showToast(MSG.room.joinSuccess);
@@ -116,18 +112,9 @@ function renderAll() {
 async function renderDashboard() {
   const wrap = document.querySelector('#dashboard');
 
-  // 내 여행 목록 ID를 조회
-  const ids = getMyRooms();
-
-  // 목록이 없으면 안내 후 종료
-  if (!ids.length) {
-    wrap.innerHTML = '<p class="text-secondary small mb-0">아직 등록된 여행이 없어요.</p>';
-    return;
-  }
-
   try {
-    // 여러 방의 요약 정보를 한 번에 조회
-    const rooms = await getRoomsBrief(ids);
+    // 현재 사용자가 멤버인 모든 방을 조회
+    const rooms = await getUserRooms();
     // 각 방을 카드로 변환(현재 방 강조, 클릭 이동, 주최자만 삭제 버튼)
     wrap.innerHTML = rooms
       .map((r) => {
@@ -188,8 +175,8 @@ async function handleDashDelete(event) {
 
     // 현재 보던 방을 지웠으면 이동, 아니면 대시보드만 갱신
     if (room === state.room.id) {
-      const rest = getMyRooms();
-      location.href = rest.length ? `?roomId=${rest[0]}` : './room-create.html';
+      const rest = await getUserRooms();
+      location.href = rest.length ? `?roomId=${rest[0].id}` : './room-create.html';
     } else {
       renderDashboard();
     }
@@ -241,12 +228,11 @@ async function handleDeleteRoom() {
   try {
     // 여행방 삭제(연관 데이터 cascade) 후 로컬 흔적 제거
     await deleteRoom(roomId);
-    forgetRoom(roomId);
     localStorage.removeItem(meKey(roomId));
 
     // 남은 여행이 있으면 그 방으로, 없으면 생성 페이지로 이동
-    const rest = getMyRooms();
-    location.href = rest.length ? `?roomId=${rest[0]}` : './room-create.html';
+    const rest = await getUserRooms();
+    location.href = rest.length ? `?roomId=${rest[0].id}` : './room-create.html';
   } catch (err) {
     showToast(MSG.common.networkError);
   }

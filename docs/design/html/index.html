@@ -222,7 +222,21 @@
   </footer>
 
   <!-- Supabase for auth state check -->
-  <script src="/design/js/lib/supabase.js"></script>
+  <script src="./design/js/lib/supabase.js"></script>
+  <script>
+    // 로그인 상태면 room.html로 리다이렉트
+    (function () {
+      const session = JSON.parse(localStorage.getItem('sb-session'));
+      if (session?.access_token) {
+        const myRooms = JSON.parse(localStorage.getItem('motrip:myRooms') || '[]');
+        if (myRooms.length) {
+          location.href = '/design/html/room.html?roomId=' + myRooms[0];
+        } else {
+          location.href = '/design/html/room-create.html';
+        }
+      }
+    })();
+  </script>
   <script>
     // ===== Navbar scroll effect =====
     const navbar = document.getElementById('navbar');
