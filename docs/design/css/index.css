@@ -104,7 +104,7 @@ h1, h2, h3 {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(248, 249, 255, 0.8);
+  background: #ffffff;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.6);
