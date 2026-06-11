@@ -3,3 +3,5 @@ docs/design/js/config.js
 opencode.json
 node_modules/
 .env
+backup/
+card.html
