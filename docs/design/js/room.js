@@ -57,6 +57,8 @@ async function init() {
     localStorage.setItem('motrip:lastRoomId', roomId);
     // 로고 클릭 시 현재 방 유지
     document.querySelector('.navbar-brand').href = '?roomId=' + roomId;
+    // 플래너 링크도 현재 페이지 새로고침
+    document.querySelector('#nav-planner').href = location.href;
     // 참여자는 전체 화면을 렌더링
     renderAll();
     // AI 추천에서 내보낸 메모가 있으면 모달로 표시
