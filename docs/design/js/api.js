@@ -7,11 +7,16 @@ const SB_URL = CONFIG.SUPABASE_URL;
 const SB_KEY = CONFIG.SUPABASE_PUBLISHABLE_KEY;
 const REST = `${SB_URL}/rest/v1`;
 
-// 공통 요청 헤더 생성
+// 공통 요청 헤더 생성 (로그인 세션 있으면 JWT 사용)
 function sbHeaders(extra = {}) {
+  let token = SB_KEY;
+  try {
+    const session = JSON.parse(localStorage.getItem('sb-session') || '{}');
+    if (session?.access_token) token = session.access_token;
+  } catch {}
   return {
     apikey: SB_KEY,
-    Authorization: `Bearer ${SB_KEY}`,
+    Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
     ...extra,
   };

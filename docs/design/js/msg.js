@@ -22,6 +22,7 @@ const MSG = {
     editSuccess: "일정이 수정되었습니다.",
     editFail: "일정 수정에 실패했습니다.",
     deleteFail: "일정 삭제에 실패했습니다.",
+    deleteSuccess: "일정이 삭제되었습니다.",
     deleteConfirm: "이 일정을 삭제하시겠습니까?",
     noData: "등록된 일정이 없습니다.",
     inputRequired: "일자, 시간, 내용을 모두 입력해 주세요.",
