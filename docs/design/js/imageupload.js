@@ -56,12 +56,16 @@ async function handleUpload(event) {
     // 업로드 실패 시 에러 처리
     if (error) {
       console.error("업로드 에러:", error);
-      alert("이미지 업로드에 실패했습니다.");
+      if (error.message?.includes("Bucket not found")) {
+        showToast("Supabase에 'image' 버킷을 먼저 생성해 주세요.");
+      } else {
+        showToast("이미지 업로드에 실패했습니다.");
+      }
       return;
     }
 
     // 성공 시 알림 및 폼 초기화
-    alert("이미지가 성공적으로 업로드되었습니다.");
+    showToast("사진이 업로드되었습니다.");
     event.target.reset();
 
     // 새 이미지가 포함된 목록 다시 렌더링
@@ -91,7 +95,9 @@ async function renderImageList(container) {
     // 조회 실패 시 에러 로깅 후 종료
     if (error) {
       console.error("목록 조회 에러:", error);
-      container.innerHTML = "<p class='text-danger text-center'>목록을 불러오지 못했습니다.</p>";
+      container.innerHTML = error.message?.includes("Bucket not found")
+        ? "<p class='text-warning text-center'>Supabase Storage에 'image' 버킷을 생성해 주세요.</p>"
+        : "<p class='text-danger text-center'>이미지를 불러오지 못했습니다.</p>";
       return;
     }
 
