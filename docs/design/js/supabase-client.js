@@ -26,30 +26,43 @@ const supabaseClient = window.supabase.createClient(
   'sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK'
 );
 
-/* ── getUser()를 sb-session 기반으로 재정의 (SDK Auth API 호출 회피) ── */
-supabaseClient.auth.getUser = async function () {
+/* ── 헬퍼: sb-session에서 세션 객체 읽기 (없거나 유효하지 않으면 null) ── */
+function readSBSession() {
   try {
     const raw = localStorage.getItem('sb-session');
-    if (raw) {
-      const s = JSON.parse(raw);
-      // user가 있으면 바로 반환
-      if (s?.user?.id) return { data: { user: s.user }, error: null };
-      // user가 없지만 access_token이 있으면 fetch로 조회 후 저장
-      if (s?.access_token) {
-        const res = await fetch('https://porvghadkgpamnvbuyqu.supabase.co/auth/v1/user', {
-          headers: {
-            'apikey': 'sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK',
-            'Authorization': `Bearer ${s.access_token}`
-          }
-        });
-        if (res.ok) {
-          const user = await res.json();
-          if (user?.id) {
-            s.user = user;
-            localStorage.setItem('sb-session', JSON.stringify(s));
-            return { data: { user }, error: null };
-          }
-        }
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s?.access_token) return null;
+    return s;
+  } catch { return null; }
+}
+
+/* ── getSession() 재정의 — sb-session 기반, SDK inMemorySession 우회 ── */
+supabaseClient.auth.getSession = async function () {
+  const s = readSBSession();
+  if (!s) return { data: { session: null }, error: null };
+  return { data: { session: s }, error: null };
+};
+
+/* ── getUser() 재정의 — sb-session 기반, SDK Auth API 호출 회피 ── */
+supabaseClient.auth.getUser = async function () {
+  const s = readSBSession();
+  if (!s) return { data: { user: null }, error: null };
+  if (s?.user?.id) return { data: { user: s.user }, error: null };
+  // user가 없지만 access_token이 있으면 fetch로 조회 후 저장
+  try {
+    const res = await fetch('https://porvghadkgpamnvbuyqu.supabase.co/auth/v1/user', {
+      headers: {
+        'apikey': 'sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK',
+        'Authorization': `Bearer ${s.access_token}`
+      }
+    });
+    if (res.ok) {
+      const user = await res.json();
+      if (user?.id) {
+        s.user = user;
+        localStorage.setItem('sb-session', JSON.stringify(s));
+        return { data: { user }, error: null };
       }
     }
   } catch {}

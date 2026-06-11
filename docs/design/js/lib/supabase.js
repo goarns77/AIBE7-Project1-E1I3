@@ -71,8 +71,8 @@ const _supabase = {
       window.location.href = url;
     },
 
-    /** OAuth 콜백 - URL hash에서 세션 추출 */
-    _handleOAuthCallback () {
+    /** OAuth 콜백 - URL hash에서 세션 추출 후 사용자 정보 fetch */
+    async _handleOAuthCallback () {
       const hash = window.location.hash;
       if (!hash || !hash.includes('access_token')) return null;
       const params = new URLSearchParams(hash.replace('#', ''));
@@ -82,17 +82,26 @@ const _supabase = {
         expires_in: params.get('expires_in'),
         token_type: params.get('token_type'),
       };
-      if (session.access_token) {
-        // 토큰만 저장하고 user는 추후 getSession()에서 fetch
-        session.user = { id: null };
-        localStorage.setItem('sb-session', JSON.stringify(session));
-        try {
-          localStorage.setItem('sb-porvghadkgpamnvbuyqu.supabase.co-auth-token', JSON.stringify(session));
-        } catch {}
-        window.location.hash = '';
-        return session;
-      }
-      return null;
+      if (!session.access_token) return null;
+
+      // 사용자 정보 fetch (로그인 후 바로 방으로 이동할 수 있도록)
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${session.access_token}` }
+        });
+        if (res.ok) {
+          const user = await res.json();
+          if (user?.id) session.user = user;
+        }
+      } catch {}
+      if (!session.user?.id) session.user = { id: null };
+
+      localStorage.setItem('sb-session', JSON.stringify(session));
+      try {
+        localStorage.setItem('sb-porvghadkgpamnvbuyqu.supabase.co-auth-token', JSON.stringify(session));
+      } catch {}
+      window.location.hash = '';
+      return session;
     },
 
     /** 로그아웃 */
