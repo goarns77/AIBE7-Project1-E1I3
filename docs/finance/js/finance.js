@@ -298,42 +298,46 @@ function renderExpenseList() {
    지출 — 추가 핸들러
    ═══════════════════════════════ */
 async function handleAddExpense(e) {
-  // 폼 기본 제출 방지
-  e.preventDefault();
+  try {
+    // 폼 기본 제출 방지
+    e.preventDefault();
 
-  // 로그인 체크
-  if (!currentUser) { showToast(MSG.auth.notLoggedIn); return; }
+    // 로그인 체크
+    if (!currentUser) { showToast(MSG.auth.notLoggedIn); return; }
 
-  // 폼 데이터 구조 분해
-  const fd = new FormData(e.target);
-  const expense_date = fd.get('expense_date')?.trim();
-  const category     = fd.get('category');
-  const amount       = Number(fd.get('amount'));
-  const description  = fd.get('description')?.trim();
-  const payer        = fd.get('payer')?.trim() || null;
+    // 폼 데이터 구조 분해
+    const fd = new FormData(e.target);
+    const expense_date = fd.get('expense_date')?.trim();
+    const category     = fd.get('category');
+    const amount       = Number(fd.get('amount'));
+    const description  = fd.get('description')?.trim();
+    const payer        = fd.get('payer')?.trim() || null;
 
-  // 필수 항목 검증
-  if (!expense_date || !category || !description) {
-    showToast(MSG.expense.inputRequired); return;
+    // 필수 항목 검증
+    if (!expense_date || !category || !description) {
+      showToast(MSG.expense.inputRequired); return;
+    }
+    if (!amount || amount <= 0) {
+      showToast(MSG.expense.amountInvalid); return;
+    }
+
+    // Supabase expenses 테이블에 삽입
+    const { data, error } = await supabaseClient
+      .from('expenses')
+      .insert({ expense_date, category, amount, description, payer, user_id: currentUser.id })
+      .select()
+      .single();
+
+    if (error) { showToast(MSG.expense.addFail); return; }
+
+    // 로컬 배열 맨 앞에 추가 후 재렌더링
+    expenses.unshift(data);
+    renderAll();
+    e.target.reset();
+    showToast(MSG.expense.addSuccess);
+  } catch (err) {
+    showToast(MSG.common.networkError);
   }
-  if (!amount || amount <= 0) {
-    showToast(MSG.expense.amountInvalid); return;
-  }
-
-  // Supabase expenses 테이블에 삽입
-  const { data, error } = await supabaseClient
-    .from('expenses')
-    .insert({ expense_date, category, amount, description, payer, user_id: currentUser.id })
-    .select()
-    .single();
-
-  if (error) { showToast(MSG.expense.addFail); return; }
-
-  // 로컬 배열 맨 앞에 추가 후 재렌더링
-  expenses.unshift(data);
-  renderAll();
-  e.target.reset();
-  showToast(MSG.expense.addSuccess);
 }
 
 /* ═══════════════════════════════
