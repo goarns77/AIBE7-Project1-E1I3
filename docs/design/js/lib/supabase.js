@@ -81,9 +81,10 @@ const _supabase = {
         refresh_token: params.get('refresh_token'),
         expires_in: params.get('expires_in'),
         token_type: params.get('token_type'),
-        user: { id: params.get('provider_refresh_token') ? null : null }
       };
       if (session.access_token) {
+        // 토큰만 저장하고 user는 추후 getSession()에서 fetch
+        session.user = { id: null };
         localStorage.setItem('sb-session', JSON.stringify(session));
         try {
           localStorage.setItem('sb-porvghadkgpamnvbuyqu.supabase.co-auth-token', JSON.stringify(session));
