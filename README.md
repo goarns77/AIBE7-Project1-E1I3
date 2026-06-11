@@ -26,7 +26,7 @@
 **프론트엔드**
 
 - HTML5 / CSS3 / **Vanilla JavaScript (ES6+)**
-- **Bootstrap 5** (대부분 페이지) · TailwindCSS (마이페이지)
+- **Bootstrap 5** 
 - 폰트: Pretendard(본문) · Paperlogy(제목) — _Sky & Shore_ 디자인 토큰
 - 외부 라이브러리: **카카오 지도 SDK**, **Chart.js**(차트), **marked**(마크다운 렌더)
 
