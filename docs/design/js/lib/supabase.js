@@ -18,6 +18,10 @@ const _supabase = {
       const data = await res.json();
       if (!res.ok) return { data: null, error: { status: res.status, ...data } };
       localStorage.setItem('sb-session', JSON.stringify(data));
+      // SDK 스토리지 키에도 동시 저장
+      try {
+        localStorage.setItem('sb-porvghadkgpamnvbuyqu.supabase.co-auth-token', JSON.stringify(data));
+      } catch {}
       return { data: { session: data, user: data.user }, error: null };
     },
 
@@ -81,6 +85,9 @@ const _supabase = {
       };
       if (session.access_token) {
         localStorage.setItem('sb-session', JSON.stringify(session));
+        try {
+          localStorage.setItem('sb-porvghadkgpamnvbuyqu.supabase.co-auth-token', JSON.stringify(session));
+        } catch {}
         window.location.hash = '';
         return session;
       }
