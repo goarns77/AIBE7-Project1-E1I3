@@ -102,7 +102,7 @@ function bindProfileForm(user) {
       const res = await fetch(
         "https://porvghadkgpamnvbuyqu.supabase.co/auth/v1/user",
         {
-          method: "PATCH",
+          method: "PUT",
           headers: {
             apikey: "sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK",
             Authorization: `Bearer ${session.access_token}`,
