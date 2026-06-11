@@ -85,8 +85,11 @@ async function renderWeather() {
     const room = rooms.find(r => r.destination && r.start_date) || rooms[0];
     if (!room?.destination || !room?.start_date) { card.style.display = "none"; return; }
 
-    // 장소명 → 좌표 변환 (Nominatim)
-    const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(room.destination)}&format=json&limit=1`);
+    // 장소명 → 좌표 변환 (Nominatim, CORS 필요시 User-Agent 설정)
+    const geo = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(room.destination)}&format=json&limit=1`,
+      { headers: { "User-Agent": "Motrip/1.0" } },
+    );
     const geoData = await geo.json();
     if (!geoData.length) { card.style.display = "none"; return; }
 
@@ -111,7 +114,8 @@ async function renderWeather() {
         <div class="small fw-bold">${data.daily.temperature_2m_max[i]}° / ${data.daily.temperature_2m_min[i]}°</div>
       </div>`;
     }).join("");
-  } catch {
+  } catch (e) {
+    console.warn("날씨 로드 실패:", e);
     card.style.display = "none";
   }
 }

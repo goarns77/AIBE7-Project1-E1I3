@@ -74,9 +74,9 @@ async function handleUpload(event) {
       const errText = await res.text();
       console.error("업로드 에러:", res.status, errText);
       if (errText.includes("Bucket not found")) {
-        showToast("Supabase에 'image' 버킷을 먼저 생성해 주세요.");
-      } else if (res.status === 401 || res.status === 403) {
-        showToast("업로드 권한이 없습니다. Supabase Storage RLS를 확인해 주세요.");
+        showToast("Supabase Storage에 'image' 버킷을 먼저 생성해 주세요.");
+      } else if (errText.includes("row-level security") || res.status === 401 || res.status === 403) {
+        showToast("업로드 권한이 없습니다. Supabase Storage 'image' 버킷의 RLS를 비활성화해 주세요.");
       } else {
         showToast("이미지 업로드에 실패했습니다.");
       }
