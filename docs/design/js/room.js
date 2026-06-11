@@ -569,7 +569,7 @@ function renderPoiResults(places) {
         <div class="text-secondary small mb-2">${escapeHtml(p.road_address_name || p.address_name)}</div>
         <div class="d-flex gap-2">
           <select class="form-select form-select-sm poi-day">${dayOpts}</select>
-          <button class="btn btn-sm btn-primary btn-pill px-3 poi-add" type="button">추가</button>
+          <button class="btn btn-sm btn-primary btn-pill px-3 poi-add" type="button">일정에 추가</button>
         </div>
       </div>`,
     )
@@ -584,29 +584,20 @@ function renderPoiResults(places) {
     .forEach((b) => b.addEventListener("click", handleLocatePoi));
 }
 
-// 검색 결과 장소를 선택한 Day에 추가
+// 검색 결과 장소를 일정 추가 폼에 채우기
 async function handleAddPlace(event) {
-  // 카드 데이터와 선택된 Day 추출
   const card = event.currentTarget.closest(".poi-card");
-  const { x, y, name, address } = card.dataset;
+  const { name, address, x, y } = card.dataset;
   const day = card.querySelector(".poi-day").value;
 
-  try {
-    // 일정 추가 API 호출 후 화면·마커 갱신
-    await addItineraryItem(state.room.id, {
-      day,
-      placeName: name,
-      address,
-      x,
-      y,
-    });
-    state.room = await getRoom(state.room.id);
-    showToast(MSG.itinerary.added);
-    renderBoard();
-    refreshMarkers();
-  } catch (err) {
-    showToast(MSG.common.networkError);
-  }
+  const placeEl = document.querySelector("#sch-add-place");
+  if (!placeEl) return;
+  placeEl.value = address ? `${name} (${address})` : name;
+  document.querySelector("#sch-add-x").value = x;
+  document.querySelector("#sch-add-y").value = y;
+  document.querySelector("#sch-add-date").value = day && day !== "unscheduled" ? day : "";
+  document.querySelector("#add-schedule-form").scrollIntoView({ behavior: "smooth", block: "center" });
+  showToast(MSG.map.addedToForm);
 }
 
 // 검색 결과 클릭 시 지도 중심 이동
