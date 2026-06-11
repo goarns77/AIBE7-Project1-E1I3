@@ -59,15 +59,15 @@ const legendBox     = document.querySelector('#chart-legend');
 // 토스트 엘리먼트
 const toastEl       = document.querySelector('#toast');
 // 로그인 상태 표시
-const userStatus    = document.querySelector('#user-status');
+const finUserStatus    = document.querySelector('#fin-user-status');
 // 로그아웃 버튼
-const logoutBtn     = document.querySelector('#logout-btn');
+const finLogoutBtn     = document.querySelector('#fin-logout-btn');
 // 수정 폼 래퍼 (숨김/표시 전환)
-const editWrapper   = document.querySelector('#edit-form-wrapper');
+const finEditWrapper   = document.querySelector('#fin-edit-form-wrapper');
 // 수정 취소 버튼
-const editCancelBtn = document.querySelector('#edit-cancel-btn');
+const finEditCancelBtn = document.querySelector('#fin-edit-cancel-btn');
 // 수정 폼 자체
-const editForm      = document.querySelector('#edit-expense-form');
+const finEditForm      = document.querySelector('#edit-expense-form');
 // 통계 요약 수치 요소들
 const statTotal     = document.querySelector('#stat-total');
 const statCount     = document.querySelector('#stat-count');
@@ -95,9 +95,9 @@ async function initFinance() {
   // 이벤트 핸들러 등록
   expenseForm.addEventListener('submit', handleAddExpense);
   budgetForm.addEventListener('submit', handleSaveBudget);
-  editForm.addEventListener('submit', handleEditExpense);
-  editCancelBtn.addEventListener('click', cancelEdit);
-  logoutBtn.addEventListener('click', handleLogout);
+  finEditForm.addEventListener('submit', handleEditExpense);
+  finEditCancelBtn.addEventListener('click', cancelEdit);
+  finLogoutBtn.addEventListener('click', handleLogout);
 }
 
 /* ═══════════════════════════════
@@ -113,11 +113,11 @@ async function checkAuthState() {
 function renderAuthUI() {
   // 로그인 여부에 따라 상단 상태 텍스트·버튼 표시 전환
   if (currentUser) {
-    userStatus.textContent = currentUser.email;
-    logoutBtn.classList.remove('d-none');
+    finUserStatus.textContent = currentUser.email;
+    finLogoutBtn.classList.remove('d-none');
   } else {
-    userStatus.textContent = '';
-    logoutBtn.classList.add('d-none');
+    finUserStatus.textContent = '';
+    finLogoutBtn.classList.add('d-none');
   }
 }
 
@@ -327,15 +327,15 @@ function startEdit(id) {
   editingId = id;
 
   // 수정 폼에 기존 값 채우기
-  editForm.querySelector('[name="edit-date"]').value        = ex.expense_date;
-  editForm.querySelector('[name="edit-category"]').value    = ex.category;
-  editForm.querySelector('[name="edit-amount"]').value      = ex.amount;
-  editForm.querySelector('[name="edit-description"]').value = ex.description;
-  editForm.querySelector('[name="edit-payer"]').value       = ex.payer ?? '';
+  finEditForm.querySelector('[name="edit-date"]').value        = ex.expense_date;
+  finEditForm.querySelector('[name="edit-category"]').value    = ex.category;
+  finEditForm.querySelector('[name="edit-amount"]').value      = ex.amount;
+  finEditForm.querySelector('[name="edit-description"]').value = ex.description;
+  finEditForm.querySelector('[name="edit-payer"]').value       = ex.payer ?? '';
 
   // 수정 폼 표시
-  editWrapper.classList.remove('d-none');
-  editWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  finEditWrapper.classList.remove('d-none');
+  finEditWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function handleEditExpense(e) {
@@ -376,8 +376,8 @@ async function handleEditExpense(e) {
 function cancelEdit() {
   // 수정 폼 숨김 및 상태 초기화
   editingId = null;
-  editWrapper.classList.add('d-none');
-  editForm.reset();
+  finEditWrapper.classList.add('d-none');
+  finEditForm.reset();
 }
 
 /* ═══════════════════════════════

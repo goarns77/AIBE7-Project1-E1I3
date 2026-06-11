@@ -18,6 +18,11 @@
   >
   <!-- 공통 테마 -->
   <link rel="stylesheet" href="../css/room.css">
+  <!-- finance 모듈 스타일(렌더 클래스용) -->
+  <link rel="stylesheet" href="../../finance/css/finance.css">
+  <!-- Supabase SDK + Chart.js (schedule·finance 모듈 로직용) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -25,7 +30,9 @@
   <!-- 글래스 헤더 -->
   <nav class="navbar navbar-expand-lg glass-panel sticky-top shadow-sm">
     <div class="container" style="max-width: 1280px;">
-      <a class="navbar-brand brand-logo fs-3" href="./index.html">Motrip</a>
+      <a class="navbar-brand" href="./index.html">
+        <img src="../images/motrip-logo.png" alt="Motrip" style="height:36px;width:auto;">
+      </a>
       <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#topnav">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -33,10 +40,13 @@
         <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
           <li class="nav-item"><a class="nav-link" href="#">패키지</a></li>
           <li class="nav-item"><a class="nav-link active fw-bold text-primary" href="#">플래너</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">AI 추천</a></li>
+          <li class="nav-item"><a class="nav-link" href="./ai-chat.html">AI 추천</a></li>
           <li class="nav-item"><a class="nav-link" href="#">마이페이지</a></li>
           <li class="nav-item ms-lg-2">
             <a class="btn btn-primary btn-pill px-4" href="./room-create.html">여행방 만들기</a>
+          </li>
+          <li class="nav-item ms-lg-2">
+            <button class="btn btn-outline-danger btn-pill px-3" onclick="logout()">로그아웃</button>
           </li>
         </ul>
       </div>
@@ -116,8 +126,8 @@
       <section class="mb-5">
         <div class="mb-3">
           <span class="vote-chip mb-2"><span class="material-symbols-outlined">explore</span> Route Discovery</span>
-          <h2 class="h4 mb-1">장소를 찾아 일정에 담기</h2>
-          <p class="text-secondary mb-0">검색한 장소를 원하는 Day에 추가하면 지도에 표시돼요.</p>
+          <h2 class="h4 mb-1">장소 검색 & 지도</h2>
+          <p class="text-secondary mb-0">장소를 검색해 지도에서 위치를 확인하세요.</p>
         </div>
 
         <div class="row g-4">
@@ -141,14 +151,76 @@
         </div>
       </section>
 
-      <!-- Group Itinerary (Day 보드) -->
+      <!-- 일정 (schedule 모듈 로직 재사용 · 룸 네이티브 UI) -->
       <section class="mb-5">
         <div class="mb-3">
-          <span class="vote-chip mb-2"><span class="material-symbols-outlined">calendar_month</span> Group Itinerary</span>
+          <span class="vote-chip mb-2"><span class="material-symbols-outlined">calendar_month</span> 일정 관리</span>
           <h2 class="h4 mb-1">우리 일정</h2>
-          <p class="text-secondary mb-0">Day별로 담은 장소를 한눈에 확인하세요.</p>
+          <p class="text-secondary mb-0">팀원과 일정을 추가·수정하고 ♥로 투표하세요. (로그인 필요)</p>
         </div>
-        <div id="itinerary-board" class="row g-3"></div>
+
+        <div class="row g-4">
+          <!-- 일정 추가/수정 폼 -->
+          <div class="col-lg-5">
+            <div class="card rounded-4xl">
+              <div class="card-body p-4">
+                <h3 class="h6 mb-3">일정 추가</h3>
+                <form id="add-schedule-form" novalidate>
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold" for="sch-add-date">📅 일자</label>
+                    <input id="sch-add-date" type="date" name="trip_date" class="form-control input-soft" required>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold" for="sch-add-time">⏰ 시간</label>
+                    <input id="sch-add-time" type="time" name="trip_time" class="form-control input-soft" required>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold" for="sch-add-place">📍 위치 <span class="text-muted fw-normal">(지도 검색 → 일정에 추가)</span></label>
+                    <input id="sch-add-place" type="text" name="place_name" class="form-control input-soft" placeholder="지도에서 장소를 추가하면 채워집니다" readonly>
+                    <input id="sch-add-x" type="hidden" name="place_x">
+                    <input id="sch-add-y" type="hidden" name="place_y">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold" for="sch-add-content">📝 내용</label>
+                    <textarea id="sch-add-content" name="content" rows="2" class="form-control input-soft" placeholder="일정 내용" required></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-pill w-100">일정 추가</button>
+                </form>
+
+                <!-- 수정 폼 (수정 클릭 시 표시) -->
+                <div id="edit-form-wrapper" class="d-none mt-4 pt-3 border-top">
+                  <h3 class="h6 mb-3">✏️ 일정 수정</h3>
+                  <form id="edit-schedule-form" novalidate>
+                    <input type="hidden" name="edit-id">
+                    <div class="mb-2">
+                      <label class="form-label small fw-semibold" for="sch-edit-date">일자</label>
+                      <input id="sch-edit-date" type="date" name="edit-date" class="form-control input-soft" required>
+                    </div>
+                    <div class="mb-2">
+                      <label class="form-label small fw-semibold" for="sch-edit-time">시간</label>
+                      <input id="sch-edit-time" type="time" name="edit-time" class="form-control input-soft" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label small fw-semibold" for="sch-edit-content">내용</label>
+                      <textarea id="sch-edit-content" name="edit-content" rows="2" class="form-control input-soft" required></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                      <button type="submit" class="btn btn-primary btn-pill flex-grow-1">수정 완료</button>
+                      <button type="button" id="edit-cancel-btn" class="btn btn-outline-primary btn-pill">취소</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 일정 목록 -->
+          <div class="col-lg-7">
+            <div id="schedule-list">
+              <p class="text-center text-muted py-4">일정을 불러오는 중...</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- 그룹 투표 -->
@@ -181,6 +253,122 @@
 
         <h3 class="h5 mb-3">진행 중인 투표</h3>
         <div id="vote-list"></div>
+      </section>
+
+      <!-- 지출 / 정산 (finance 모듈 로직 재사용 · 룸 네이티브 UI) -->
+      <section class="mb-4">
+        <div class="mb-3">
+          <span class="vote-chip mb-2"><span class="material-symbols-outlined">payments</span> 지출 / 정산</span>
+          <h2 class="h4 mb-1">함께 정산해요</h2>
+          <p class="text-secondary mb-0">지출을 기록하고 예산·정산을 확인하세요. (로그인 필요)</p>
+        </div>
+
+        <!-- 통계 요약 -->
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3"><div class="stat-card"><span id="stat-total" class="stat-value">₩0</span><span class="stat-label">총 지출</span></div></div>
+          <div class="col-6 col-md-3"><div class="stat-card"><span id="stat-count" class="stat-value">0건</span><span class="stat-label">지출 건수</span></div></div>
+          <div class="col-6 col-md-3"><div class="stat-card"><span id="stat-avg" class="stat-value">₩0</span><span class="stat-label">건당 평균</span></div></div>
+          <div class="col-6 col-md-3"><div class="stat-card"><span id="stat-max" class="stat-value">₩0</span><span class="stat-label">최대 지출</span></div></div>
+        </div>
+
+        <div class="row g-4">
+          <!-- 좌: 지출입력 + 예산 + 정산 -->
+          <div class="col-lg-5">
+            <div class="card rounded-4xl mb-4">
+              <div class="card-body p-4">
+                <h3 class="h6 mb-3">지출 추가</h3>
+                <form id="expense-form" novalidate>
+                  <div class="mb-2"><label class="form-label small fw-semibold">📅 날짜</label>
+                    <input type="date" name="expense_date" class="form-control input-soft" required></div>
+                  <div class="mb-2"><label class="form-label small fw-semibold">🏷 카테고리</label>
+                    <select id="add-category" name="category" class="form-select input-soft" required>
+                      <option value="" disabled selected>카테고리 선택</option>
+                    </select></div>
+                  <div class="mb-2"><label class="form-label small fw-semibold">💰 금액 (₩)</label>
+                    <input type="number" name="amount" min="1" class="form-control input-soft" placeholder="50000" required></div>
+                  <div class="mb-2"><label class="form-label small fw-semibold">📝 내용</label>
+                    <input type="text" name="description" class="form-control input-soft" placeholder="호텔 1박" required></div>
+                  <div class="mb-3"><label class="form-label small fw-semibold">👤 결제자 <span class="text-muted fw-normal">(선택)</span></label>
+                    <input type="text" name="payer" class="form-control input-soft" placeholder="홍길동"></div>
+                  <button type="submit" class="btn btn-primary btn-pill w-100">지출 추가</button>
+                </form>
+
+                <!-- 지출 수정 폼 -->
+                <div id="fin-edit-form-wrapper" class="d-none mt-4 pt-3 border-top">
+                  <h3 class="h6 mb-3">✏️ 지출 수정</h3>
+                  <form id="edit-expense-form" novalidate>
+                    <div class="mb-2"><input type="date" name="edit-date" class="form-control input-soft" required></div>
+                    <div class="mb-2"><select id="edit-category" name="edit-category" class="form-select input-soft" required><option value="" disabled>카테고리 선택</option></select></div>
+                    <div class="mb-2"><input type="number" name="edit-amount" min="1" class="form-control input-soft" required></div>
+                    <div class="mb-2"><input type="text" name="edit-description" class="form-control input-soft" required></div>
+                    <div class="mb-3"><input type="text" name="edit-payer" class="form-control input-soft" placeholder="결제자"></div>
+                    <div class="d-flex gap-2">
+                      <button type="submit" class="btn btn-primary btn-pill flex-grow-1">수정 완료</button>
+                      <button type="button" id="fin-edit-cancel-btn" class="btn btn-outline-primary btn-pill">취소</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <div class="card rounded-4xl mb-4">
+              <div class="card-body p-4">
+                <h3 class="h6 mb-3">🎯 예산 설정</h3>
+                <form id="budget-form" novalidate>
+                  <div class="input-group mb-3">
+                    <input id="budget-input" type="number" min="1" class="form-control input-soft" placeholder="총 예산 (₩)">
+                    <button type="submit" class="btn btn-primary btn-pill px-3 ms-2">저장</button>
+                  </div>
+                </form>
+                <div class="d-flex justify-content-between small mb-1">
+                  <span id="budget-pct" class="fw-semibold text-primary">예산 미설정</span>
+                  <span id="budget-remain" class="text-muted"></span>
+                </div>
+                <div class="budget-bar-wrap"><div id="budget-bar" class="budget-bar-fill" style="width:0%;"></div></div>
+              </div>
+            </div>
+
+            <div class="card rounded-4xl">
+              <div class="card-body p-4">
+                <h3 class="h6 mb-3"><span class="material-symbols-outlined text-primary" style="font-size:1.1rem;">calculate</span> 팀 정산</h3>
+                <div id="settlement-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 우: 차트 + 목록 -->
+          <div class="col-lg-7">
+            <div class="card rounded-4xl mb-4">
+              <div class="card-body p-4">
+                <h3 class="h6 mb-3">카테고리별 지출</h3>
+                <div class="row g-3 align-items-center">
+                  <div class="col-12 col-sm-5">
+                    <div class="chart-wrapper">
+                      <canvas id="pie-chart"></canvas>
+                      <div class="chart-center-label">
+                        <span id="chart-total" class="total-amount">₩0</span>
+                        <span class="total-label">총 지출</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-7"><div id="chart-legend"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="card rounded-4xl">
+              <div class="card-body p-4">
+                <h3 class="h6 mb-3">지출 내역</h3>
+                <div id="expense-list"><p class="text-center text-muted py-4">지출 내역을 불러오는 중...</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- schedule·finance 모듈 로직용 숨김 상태 요소 (auth UI) -->
+        <div class="d-none">
+          <span id="user-status"></span><button id="logout-btn" type="button"></button>
+          <span id="fin-user-status"></span><button id="fin-logout-btn" type="button"></button>
+        </div>
       </section>
 
     </section>
@@ -224,8 +412,13 @@
   <script src="../js/msg.js"></script>
   <script src="../js/ui.js"></script>
   <script src="../js/config.js"></script>
+  <script src="../js/lib/supabase.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/map.js"></script>
+  <!-- schedule·finance 모듈 (Supabase SDK 클라이언트 사용) -->
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/schedule.js"></script>
+  <script src="../../finance/js/finance.js"></script>
   <script src="../js/room.js"></script>
 
 </body>
