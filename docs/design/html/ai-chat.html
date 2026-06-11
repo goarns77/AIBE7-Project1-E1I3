@@ -85,13 +85,14 @@
   <script src="../js/config.js"></script>
   <script src="../js/api.js"></script>
   <script>
-    // 플래너 링크에 마지막 방문 방 ID 추가
+    // 플래너 링크에 마지막 방문 방 ID 또는 첫 여행방 ID 추가
     (function () {
+      const el = document.getElementById('navPlanner');
+      if (!el) return;
       const lastId = localStorage.getItem('motrip:lastRoomId');
-      if (lastId) {
-        const el = document.getElementById('navPlanner');
-        if (el) el.href = './room.html?roomId=' + lastId;
-      }
+      const first = getMyRooms()[0];
+      const target = lastId || first;
+      el.href = target ? './room.html?roomId=' + target : './room.html';
     })();
   </script>
   <script src="../js/ai-chat.js"></script>
