@@ -59,7 +59,24 @@ async function handleUpload(event) {
 
     showToast("사진이 업로드되었습니다.");
     event.target.reset();
-    await renderImageList(document.querySelector("#image-list"));
+
+    // 업로드된 이미지를 목록에 직접 추가 (리스트 API는 RLS 차단 가능성)
+    const container = document.querySelector("#image-list");
+    // 처음 업로드면 안내 메시지 제거
+    if (container.querySelector(".text-muted")) container.innerHTML = "";
+    const publicUrl = "https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/public/image/" + safeName;
+    const colDiv = document.createElement("div");
+    colDiv.className = "col-6 col-md-4";
+    colDiv.innerHTML = `
+      <div class="card album-card h-100">
+        <img src="${publicUrl}" class="album-img" alt="${safeName}" loading="lazy"
+             onerror="this.alt='이미지를 불러올 수 없습니다';this.style.filter='grayscale(1)';">
+        <div class="card-body p-2 text-center">
+          <small class="text-muted text-truncate d-block">${safeName}</small>
+        </div>
+      </div>
+    `;
+    container.append(colDiv);
 
   } catch (err) {
     console.error("예외 발생:", err);
@@ -112,7 +129,7 @@ async function renderImageList(container) {
       colDiv.innerHTML = `
         <div class="card album-card h-100">
           <img src="${publicUrl}" class="album-img" alt="${image.name}" loading="lazy"
-               onerror="this.parentElement.innerHTML='<div class=\\'p-3 text-center text-muted small\\'>이미지를 불러올 수 없습니다.<br>버킷을 public으로 설정해 주세요.</div>'">
+               onerror="this.alt='이미지를 불러올 수 없습니다';this.style.filter='grayscale(1)';">
           <div class="card-body p-2 text-center">
             <small class="text-muted text-truncate d-block">${image.name}</small>
           </div>
