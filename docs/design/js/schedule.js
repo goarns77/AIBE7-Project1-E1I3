@@ -29,7 +29,7 @@ const scheduleList = document.querySelector("#schedule-list");
 const addForm = document.querySelector("#add-schedule-form");
 
 /** 현재 방 ID (URL에서 추출) */
-const roomId = new URLSearchParams(location.search).get("roomId");
+let roomId = new URLSearchParams(location.search).get("roomId");
 
 /** 방별 일정 localStorage 키 */
 function scheduleKey() {

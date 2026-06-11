@@ -28,8 +28,8 @@ let currentUser = null;
 let expenses = [];
 // 현재 설정된 총 예산 금액
 let budget = 0;
-// 현재 방 ID (URL에서 추출)
-let roomId = new URLSearchParams(location.search).get('roomId');
+// 현재 방 ID (URL에서 추출, schedule.js에서 이미 선언)
+roomId = new URLSearchParams(location.search).get('roomId');
 // 파이 차트 인스턴스 (Chart.js)
 let pieChart = null;
 // 수정 중인 지출 ID (null이면 신규 추가 모드)
