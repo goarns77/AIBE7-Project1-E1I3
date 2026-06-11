@@ -226,8 +226,8 @@ function renderHeader() {
   // 초대 링크 구성 후 입력 칸에 표시
   document.querySelector('#invite-link').value = buildInviteLink(id, inviteCode);
 
-  // 주최자(host)에게만 여행방 삭제 버튼 노출
-  const isHost = members.some((m) => m.id === state.meId && m.isHost);
+  // 주최자(host)에게만 여행방 삭제 버튼 노출 (isHost/is_host 모두 체크)
+  const isHost = members.some((m) => m.id === state.meId && (m.isHost || m.is_host));
   document.querySelector('#delete-room').classList.toggle('d-none', !isHost);
 
   // 메모 버튼에 저장된 개수 표시
@@ -585,11 +585,16 @@ function openMemoModal(roomId) {
         <div class="card-body">
           <div class="d-flex justify-content-between mb-2">
             <small class="text-secondary">${new Date(m.exportedAt).toLocaleString()}</small>
-            <button class="btn btn-sm btn-link text-danger p-0 memo-delete" data-index="${i}">
-              <span class="material-symbols-outlined" style="font-size:1rem;">delete</span>
-            </button>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-link text-secondary p-0 memo-edit" data-index="${i}">
+                <span class="material-symbols-outlined" style="font-size:1rem;">edit</span>
+              </button>
+              <button class="btn btn-sm btn-link text-danger p-0 memo-delete" data-index="${i}">
+                <span class="material-symbols-outlined" style="font-size:1rem;">delete</span>
+              </button>
+            </div>
           </div>
-          <div class="memo-content">${renderMemoContent(m.content)}</div>
+          <div class="memo-content" data-index="${i}">${renderMemoContent(m.content)}</div>
         </div>
       </div>
     `).join('');
@@ -605,6 +610,32 @@ function openMemoModal(roomId) {
         }
         openMemoModal(roomId);
         renderHeader();
+      });
+    });
+
+    body.querySelectorAll('.memo-edit').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.index);
+        const contentEl = body.querySelector(`.memo-content[data-index="${idx}"]`);
+        const isEditing = contentEl.querySelector('textarea');
+        if (isEditing) {
+          const text = isEditing.value;
+          memos[idx].content = text;
+          localStorage.setItem(key, JSON.stringify(memos));
+          openMemoModal(roomId);
+          renderHeader();
+        } else {
+          const raw = memos[idx].content;
+          contentEl.innerHTML = `<textarea class="form-control input-soft memo-edit-textarea" rows="6">${escapeHtml(raw)}</textarea>
+            <button class="btn btn-sm btn-primary btn-pill mt-2 memo-save">저장</button>`;
+          contentEl.querySelector('.memo-save').addEventListener('click', () => {
+            const text = contentEl.querySelector('textarea').value;
+            memos[idx].content = text;
+            localStorage.setItem(key, JSON.stringify(memos));
+            openMemoModal(roomId);
+            renderHeader();
+          });
+        }
       });
     });
   }
