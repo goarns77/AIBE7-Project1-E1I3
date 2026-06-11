@@ -48,7 +48,7 @@ async function handleUpload(event) {
 
   try {
     // Supabase 스토리지에 파일 업로드 요청
-    const { data, error } = await window.supabaseClient
+    const { data, error } = await supabaseClient
       .storage
       .from(bucketName)
       .upload(newFileName, file);
@@ -83,7 +83,7 @@ async function renderImageList(container) {
 
   try {
     // 빈 문자열("") 경로로 해당 버킷의 파일 목록 조회
-    const { data: imageList, error } = await window.supabaseClient
+    const { data: imageList, error } = await supabaseClient
       .storage
       .from(bucketName)
       .list("");
@@ -110,7 +110,7 @@ async function renderImageList(container) {
       if (image.name === ".emptyFolderPlaceholder") continue;
 
       // 파일명을 통해 Public URL(외부 접근 가능 주소) 획득
-      const { data: urlData } = window.supabaseClient
+      const { data: urlData } = supabaseClient
         .storage
         .from(bucketName)
         .getPublicUrl(image.name);

@@ -15,7 +15,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
   renderProfile(user);
-  renderMyRooms();
+  await renderMyRooms();
+  await renderWeather();
   bindProfileForm(user);
 });
 
@@ -71,6 +72,60 @@ async function renderMyRooms() {
   } catch {
     wrap.innerHTML = `<div class="col-12 text-center text-secondary py-5">여행방 목록을 불러오지 못했습니다.</div>`;
   }
+}
+
+/* ══════════════════════════════════════════
+   여행지 날씨 조회 (Open-Meteo)
+   ══════════════════════════════════════════ */
+
+async function renderWeather() {
+  const card = document.querySelector("#weather-card");
+  try {
+    const rooms = await getRoomsFromServer();
+    const room = rooms.find(r => r.destination && r.start_date) || rooms[0];
+    if (!room?.destination || !room?.start_date) { card.style.display = "none"; return; }
+
+    // 장소명 → 좌표 변환 (Nominatim)
+    const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(room.destination)}&format=json&limit=1`);
+    const geoData = await geo.json();
+    if (!geoData.length) { card.style.display = "none"; return; }
+
+    const { lat, lon } = geoData[0];
+    const endDate = room.end_date || room.start_date;
+
+    // Open-Meteo 날씨 API
+    const res = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto&start_date=${room.start_date}&end_date=${endDate}`
+    );
+    const data = await res.json();
+    if (!data.daily) { card.style.display = "none"; return; }
+
+    card.style.display = "block";
+    const forecast = document.querySelector("#weather-forecast");
+    forecast.innerHTML = data.daily.time.map((date, i) => {
+      const code = data.daily.weathercode[i];
+      const icon = weatherIcon(code);
+      return `<div class="col text-center p-2">
+        <div class="small text-secondary">${date.slice(5)}</div>
+        <div class="fs-4">${icon}</div>
+        <div class="small fw-bold">${data.daily.temperature_2m_max[i]}° / ${data.daily.temperature_2m_min[i]}°</div>
+      </div>`;
+    }).join("");
+  } catch {
+    card.style.display = "none";
+  }
+}
+
+// WMO 날씨 코드 → 아이콘
+function weatherIcon(code) {
+  if (code === 0) return "☀️";
+  if (code <= 3) return "⛅";
+  if (code <= 48) return "🌫️";
+  if (code <= 57) return "🌦️";
+  if (code <= 67) return "🌧️";
+  if (code <= 77) return "🌨️";
+  if (code <= 82) return "🌦️";
+  return "☁️";
 }
 
 /* ══════════════════════════════════════════

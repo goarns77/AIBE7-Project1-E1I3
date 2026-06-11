@@ -98,6 +98,10 @@ function bindStaticListeners() {
     .addEventListener("click", handleDeleteRoom);
   // 장소 검색 폼 제출 핸들러 연결
   document.querySelector("#poi-form").addEventListener("submit", handleSearch);
+  // 메모 버튼 핸들러 연결
+  document.querySelector("#memo-btn")?.addEventListener("click", handleMemoOpen);
+  // 메모 모두 삭제 버튼 핸들러 연결
+  document.querySelector("#memo-clear-all")?.addEventListener("click", handleMemoClear);
 }
 
 // 참여 폼 영역만 노출
@@ -151,6 +155,12 @@ function renderAll() {
   renderVotes();
   // 지도를 1회 초기화
   initMapOnce();
+
+  // AI 추천에서 내보내기 후 돌아왔으면 메모 모달 자동 오픈
+  if (localStorage.getItem("motrip:memo-new-flag") === "1") {
+    localStorage.removeItem("motrip:memo-new-flag");
+    setTimeout(() => handleMemoOpen(), 300);
+  }
 }
 
 // 내 여행 대시보드(여러 여행 카드) 렌더링
@@ -729,4 +739,47 @@ function showError() {
   document.querySelector("#join-section").classList.add("d-none");
   document.querySelector("#room-main").classList.add("d-none");
   document.querySelector("#error-section").classList.remove("d-none");
+}
+
+// AI 추천 메모 모달 열기
+function handleMemoOpen() {
+  const body = document.querySelector("#memo-body");
+  const key = `motrip:memo:${state.room.id}`;
+  const memos = JSON.parse(localStorage.getItem(key) || "[]");
+  if (!memos.length) {
+    body.innerHTML = `<p class="text-center text-muted py-4">${MSG.memo.noData}</p>`;
+  } else {
+    body.innerHTML = memos.map((m, i) => `
+      <div class="card border-0 bg-light rounded-3 mb-2">
+        <div class="card-body py-2 px-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <small class="text-secondary">${new Date(m.exportedAt).toLocaleString()}</small>
+            <button class="btn btn-sm btn-link text-danger p-0 memo-delete" data-idx="${i}">
+              <span class="material-symbols-outlined" style="font-size:1rem;">close</span>
+            </button>
+          </div>
+          <p class="mb-0 mt-1 small">${m.content}</p>
+        </div>
+      </div>
+    `).join("");
+    // 개별 삭제
+    body.querySelectorAll(".memo-delete").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.idx);
+        memos.splice(idx, 1);
+        localStorage.setItem(key, JSON.stringify(memos));
+        handleMemoOpen();
+      });
+    });
+  }
+  bootstrap.Modal.getOrCreateInstance(document.querySelector("#memoModal")).show();
+}
+
+// AI 추천 메모 모두 삭제
+function handleMemoClear() {
+  if (!confirm(MSG.memo.clearConfirm)) return;
+  const key = `motrip:memo:${state.room.id}`;
+  localStorage.removeItem(key);
+  handleMemoOpen();
+  showToast(MSG.memo.cleared);
 }

@@ -127,4 +127,10 @@ const MSG = {
     noExpense: '정산할 지출 내역이 없습니다.',
     perfect: '✅ 모두 균등하게 지출했습니다!',
   },
+  // AI 추천 메모
+  memo: {
+    noData: '저장된 메모가 없습니다.',
+    cleared: '모든 메모가 삭제되었습니다.',
+    clearConfirm: '모든 메모를 삭제하시겠습니까?',
+  },
 };
