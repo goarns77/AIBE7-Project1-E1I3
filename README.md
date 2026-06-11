@@ -100,16 +100,6 @@ const CONFIG = {
 };
 ```
 
-### 4. 서버 실행
-
-```bash
-node server.js
-# → http://localhost:3000
-```
-
-> ⚠️ **AI 채팅은 `node server.js`로 띄워야 동작**합니다. VS Code Live Server(정적)는 `/api/chat`를 처리하지 못합니다.
-> 카카오 지도는 콘솔에 접속 도메인(`http://localhost:3000`, 배포 시 `https://<id>.github.io`)을 등록해야 표시됩니다.
-
 ---
 
 ## 🗄 데이터베이스 (Supabase)
@@ -130,25 +120,18 @@ node server.js
 
 ## 🖥 주요 화면
 
-| 경로                                     | 화면                                          |
-| ---------------------------------------- | --------------------------------------------- |
-| `/` (`design/html/index.html`)           | 랜딩 페이지                                   |
-| `/design/html/login.html`, `signup.html` | 로그인 / 회원가입                             |
-| `/design/html/room-create.html`          | 여행방 생성 + 초대                            |
+| 경로                                     | 화면                                      |
+| ---------------------------------------- | ----------------------------------------- |
+| `/` (`design/html/index.html`)           | 랜딩 페이지                               |
+| `/design/html/login.html`, `signup.html` | 로그인 / 회원가입                         |
+| `/design/html/room-create.html`          | 여행방 생성 + 초대                        |
 | `/design/html/room.html?roomId=...`      | 여행방(플래너) — 지도·일정·투표·정산 통합 |
-| `/design/html/ai-chat.html`              | AI 여행 추천                                  |
-| `/design/html/mypage.html`               | 마이페이지                                    |
-| `/imageupload.html`                      | 포토 앨범                                     |
+| `/design/html/ai-chat.html`              | AI 여행 추천                              |
+| `/design/html/mypage.html`               | 마이페이지                                |
+| `/imageupload.html`                      | 포토 앨범                                 |
 
 ---
 
-## 🔒 보안
-
-- 클라이언트 키(카카오 JS·Supabase publishable)는 **공개용**이며 도메인 제한이지만, 일단 `config.js`를 `.gitignore` 처리함
-- **`GROQ_API_KEY`(서버 전용)** 은 `.env`로 관리
-- 사용자 입력은 `escapeHtml()`로 이스케이프해 **XSS 방지**
-
----
 
 ## 👥 만든 사람
 
