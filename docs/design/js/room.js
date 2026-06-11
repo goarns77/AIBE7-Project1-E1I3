@@ -146,14 +146,10 @@ async function renderDashboard() {
         const active = r.id === state.room.id;
         const badge = active ? ' <span class="badge text-bg-primary">현재</span>' : '';
         const period = `${r.start_date || '?'} ~ ${r.end_date || '?'}`;
-        // 이 방에서 내 멤버가 주최자인지 확인
-        const myMemId = localStorage.getItem(meKey(r.id));
-        const isHost = (r.members || []).some((m) => m.id === myMemId && m.is_host);
-        const delBtn = isHost
-          ? `<button class="btn btn-sm btn-link text-danger p-0 dash-delete" data-room="${r.id}" title="여행방 삭제">
+        // 모든 멤버에게 삭제 버튼 표시 (확인 대화상자로 보호)
+        const delBtn = `<button class="btn btn-sm btn-link text-danger p-0 dash-delete" data-room="${r.id}" title="여행방 삭제">
               <span class="material-symbols-outlined" style="font-size:1rem;">close</span>
-            </button>`
-          : '';
+            </button>`;
         return `
           <div class="dash-card p-3 rounded-3 border bg-white ${active ? 'border-primary' : ''}" data-room="${r.id}" style="min-width:190px; cursor:pointer;">
             <div class="d-flex justify-content-between align-items-start">
@@ -226,9 +222,8 @@ function renderHeader() {
   // 초대 링크 구성 후 입력 칸에 표시
   document.querySelector('#invite-link').value = buildInviteLink(id, inviteCode);
 
-  // 주최자(host)에게만 여행방 삭제 버튼 노출 (isHost/is_host 모두 체크)
-  const isHost = members.some((m) => m.id === state.meId && (m.isHost || m.is_host));
-  document.querySelector('#delete-room').classList.toggle('d-none', !isHost);
+  // 모든 멤버에게 여행방 삭제 버튼 노출 (확인 대화상자로 보호)
+  document.querySelector('#delete-room').classList.remove('d-none');
 
   // 메모 버튼에 저장된 개수 표시
   const memoKey = `motrip:memo:${id}`;
