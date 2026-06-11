@@ -369,13 +369,6 @@ chatInput.addEventListener('keydown', (e) => {
   }
 });
 
-document.querySelectorAll('.chip').forEach((chip) => {
-  chip.addEventListener('click', () => {
-    chatInput.value = chip.textContent.trim();
-    sendMessage();
-  });
-});
-
 if (newChatBtn) {
   newChatBtn.addEventListener('click', handleNewChat);
 }
