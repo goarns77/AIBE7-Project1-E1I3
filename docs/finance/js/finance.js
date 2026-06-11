@@ -102,16 +102,27 @@ async function initFinance() {
   finEditForm.addEventListener('submit', handleEditExpense);
   finEditCancelBtn.addEventListener('click', cancelEdit);
   finLogoutBtn.addEventListener('click', handleLogout);
-  // 현재 로그인 세션 확인
-  try { await checkAuthState(); } catch {}
-  // Supabase 인증 상태 변경 구독 (로그인/로그아웃 감지)
+  // 카테고리 select 옵션 동적 생성
+  buildCategoryOptions();
+  // Supabase 인증 상태 변경 구독 (로그인/로그아웃 감지) — 먼저 구독
   try {
-    supabaseClient.auth.onAuthStateChange((_event, session) => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      // INITIAL_SESSION(null)은 checkAuthState가 덮어쓰므로 무시
+      if (event === 'INITIAL_SESSION' && !session?.user) return;
+      // SDK가 SIGNED_OUT을 잘못 발생시켜도 sb-session이 유효하면 무시
+      if (event === 'SIGNED_OUT') {
+        try {
+          const raw = localStorage.getItem('sb-session');
+          if (raw && JSON.parse(raw)?.user?.id) return;
+        } catch {}
+      }
       currentUser = session?.user ?? null;
       renderAuthUI();
     });
   } catch {}
-  // 카테고리 select 옵션 동적 생성
+  // 현재 로그인 세션 확인 (onAuthStateChange가 null을 설정해도 덮어씀)
+  try { await checkAuthState(); } catch {}
+  // 예산 및 지출 내역 로드
   buildCategoryOptions();
   // 예산 및 지출 내역 로드
   await loadBudget();
@@ -245,10 +256,10 @@ async function loadExpenses() {
   if (error) { showToast(MSG.expense.loadFail); return; }
 
   expenses = data ?? [];
-  renderAll();
+  finRenderAll();
 }
 
-function renderAll() {
+function finRenderAll() {
   // 지출 목록·파이 차트·정산·통계 통합 렌더링
   renderExpenseList();
   renderPieChart();
@@ -332,7 +343,7 @@ async function handleAddExpense(e) {
 
     // 로컬 배열 맨 앞에 추가 후 재렌더링
     expenses.unshift(data);
-    renderAll();
+    finRenderAll();
     e.target.reset();
     showToast(MSG.expense.addSuccess);
   } catch (err) {
@@ -393,7 +404,7 @@ async function handleEditExpense(e) {
   if (idx !== -1) expenses[idx] = data;
 
   cancelEdit();
-  renderAll();
+  finRenderAll();
   showToast(MSG.expense.editSuccess);
 }
 
@@ -420,7 +431,7 @@ async function deleteExpense(id) {
 
   // 로컬 배열에서 제거 후 재렌더링
   expenses = expenses.filter(ex => String(ex.id) !== String(id));
-  renderAll();
+  finRenderAll();
 }
 
 /* ═══════════════════════════════
