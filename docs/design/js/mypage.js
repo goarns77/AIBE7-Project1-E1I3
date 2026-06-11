@@ -97,10 +97,24 @@ function bindProfileForm(user) {
     }
 
     try {
-      const { error } = await supabaseClient.auth.updateUser({
-        data: { nickname: newNickname },
-      });
-      if (error) throw error;
+      const session = readSBSession();
+      if (!session?.access_token) throw new Error("로그인이 필요합니다.");
+      const res = await fetch(
+        "https://porvghadkgpamnvbuyqu.supabase.co/auth/v1/user",
+        {
+          method: "PATCH",
+          headers: {
+            apikey: "sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK",
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ data: { nickname: newNickname } }),
+        },
+      );
+      if (!res.ok) throw new Error("서버 오류가 발생했습니다.");
+      // sb-session의 user_metadata 갱신
+      session.user = { ...session.user, user_metadata: { ...session.user.user_metadata, nickname: newNickname } };
+      localStorage.setItem("sb-session", JSON.stringify(session));
       document.querySelector("#profile-name").textContent = newNickname;
       document.querySelector("#profile-avatar").textContent = newNickname.charAt(0).toUpperCase();
       showToast("프로필이 저장되었습니다.");
