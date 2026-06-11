@@ -704,16 +704,3 @@ function showError() {
   document.querySelector("#room-main").classList.add("d-none");
   document.querySelector("#error-section").classList.remove("d-none");
 }
-
-// 서버에서 사용자 소속 여행방을 조회하고 localStorage에 캐싱
-async function getRoomsFromServer() {
-  try {
-    const rooms = await getUserRooms();
-    for (const r of rooms) {
-      if (r.id) rememberRoom(r.id);
-    }
-    return rooms;
-  } catch {
-    return [];
-  }
-}
