@@ -755,15 +755,26 @@ function handleMemoOpen() {
         <div class="card-body py-2 px-3">
           <div class="d-flex justify-content-between align-items-start">
             <small class="text-secondary">${new Date(m.exportedAt).toLocaleString()}</small>
-            <button class="btn btn-sm btn-link text-danger p-0 memo-delete" data-idx="${i}">
-              <span class="material-symbols-outlined" style="font-size:1rem;">close</span>
-            </button>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-link text-primary p-0 memo-edit" data-idx="${i}">
+                <span class="material-symbols-outlined" style="font-size:1rem;">edit</span>
+              </button>
+              <button class="btn btn-sm btn-link text-danger p-0 memo-delete" data-idx="${i}">
+                <span class="material-symbols-outlined" style="font-size:1rem;">close</span>
+              </button>
+            </div>
           </div>
-          <p class="mb-0 mt-1 small">${m.content}</p>
+          <div class="mb-0 mt-1 memo-content small">${renderMarkdown(m.content)}</div>
+          <div class="memo-edit-form d-none mt-2">
+            <textarea class="form-control form-control-sm mb-1" rows="3">${escapeHtml(m.content)}</textarea>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-primary memo-save" data-idx="${i}">저장</button>
+              <button class="btn btn-sm btn-outline-secondary memo-edit-cancel">취소</button>
+            </div>
+          </div>
         </div>
       </div>
     `).join("");
-    // 개별 삭제
     body.querySelectorAll(".memo-delete").forEach(btn => {
       btn.addEventListener("click", () => {
         const idx = parseInt(btn.dataset.idx);
@@ -772,8 +783,41 @@ function handleMemoOpen() {
         handleMemoOpen();
       });
     });
+    body.querySelectorAll(".memo-edit").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const card = btn.closest(".card-body");
+        card.querySelector(".memo-content").classList.add("d-none");
+        card.querySelector(".memo-edit-form").classList.remove("d-none");
+      });
+    });
+    body.querySelectorAll(".memo-edit-cancel").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const card = btn.closest(".card-body");
+        card.querySelector(".memo-content").classList.remove("d-none");
+        card.querySelector(".memo-edit-form").classList.add("d-none");
+      });
+    });
+    body.querySelectorAll(".memo-save").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.idx);
+        const card = btn.closest(".card-body");
+        const newContent = card.querySelector("textarea").value.trim();
+        if (!newContent) return showToast("내용을 입력해 주세요.");
+        memos[idx].content = newContent;
+        localStorage.setItem(key, JSON.stringify(memos));
+        handleMemoOpen();
+        showToast("메모가 수정되었습니다.");
+      });
+    });
   }
   bootstrap.Modal.getOrCreateInstance(document.querySelector("#memoModal")).show();
+}
+
+function renderMarkdown(text) {
+  if (typeof marked !== "undefined") {
+    return marked.parse(text, { breaks: true, gfm: true });
+  }
+  return text.replace(/\n/g, "<br>");
 }
 
 // AI 추천 메모 모두 삭제
