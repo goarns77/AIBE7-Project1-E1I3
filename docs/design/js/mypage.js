@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
   renderProfile(user);
-  renderMyRooms();
+  await renderMyRooms();
   bindProfileForm(user);
 });
 
