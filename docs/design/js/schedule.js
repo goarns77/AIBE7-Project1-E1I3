@@ -28,6 +28,14 @@ const scheduleList = document.querySelector("#schedule-list");
 /** 일정 추가 폼 */
 const addForm = document.querySelector("#add-schedule-form");
 
+/** 현재 방 ID (URL에서 추출) */
+const roomId = new URLSearchParams(location.search).get("roomId");
+
+/** 방별 일정 localStorage 키 */
+function scheduleKey() {
+  return `motrip:schedules:${roomId || "global"}`;
+}
+
 /** 일정 수정 폼 */
 const editForm = document.querySelector("#edit-schedule-form");
 
@@ -107,36 +115,24 @@ async function logoutHandler() {
 ══════════════════════════════════════════ */
 
 /**
- * Supabase에서 전체 일정을 날짜·시간 오름차순으로 불러와 화면에 그린다.
+ * 방별 localStorage에서 일정을 불러와 화면에 그린다.
  * 각 일정 카드에는 좋아요 수와 편집/삭제 버튼(본인 일정만)을 포함한다.
  */
 async function renderSchedules() {
-  // 현재 로그인 유저 정보 조회 (없으면 null)
   const { data: { user } } = await supabaseClient.auth.getUser();
 
-  // 일정 데이터를 날짜, 시간 기준 오름차순 정렬해서 불러옴
-  const { data: schedules, error } = await supabaseClient
-    .from("schedules")
-    .select("*")
-    .order("trip_date", { ascending: true })
-    .order("trip_time", { ascending: true });
+  const stored = localStorage.getItem(scheduleKey());
+  const schedules = stored ? JSON.parse(stored) : [];
 
-  if (error) return showToast(MSG.schedule.loadFail, "danger");
-
-  // 최신 목록 보관 후 지도 마커 동기화
-  lastSchedules = schedules || [];
+  lastSchedules = schedules;
   renderScheduleMarkers(lastSchedules);
 
-  // 기존 목록 초기화 후 재렌더링
   scheduleList.innerHTML = "";
-
-  // 일정이 없으면 안내 메시지 표시
-  if (!schedules || schedules.length === 0) {
+  if (!schedules.length) {
     scheduleList.innerHTML = `<p class="text-center text-muted py-4">${MSG.schedule.noData}</p>`;
     return;
   }
 
-  // 각 일정을 카드로 렌더링
   for (const schedule of schedules) {
     const card = await buildScheduleCard(schedule, user);
     scheduleList.appendChild(card);
@@ -261,11 +257,19 @@ async function addHandler(event) {
   }
 
   // Supabase에 일정 삽입(위치 포함)
-  const { error } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from("schedules")
-    .insert({ trip_date, trip_time, content: content.trim(), user_id: user.id, place_name, place_x, place_y });
+    .insert({ trip_date, trip_time, content: content.trim(), user_id: user.id, place_name, place_x, place_y })
+    .select()
+    .single();
 
   if (error) return showToast(MSG.schedule.addFail, "danger");
+
+  // 방별 localStorage에도 저장
+  const schedules = JSON.parse(localStorage.getItem(scheduleKey()) || "[]");
+  schedules.push(data);
+  schedules.sort((a, b) => (a.trip_date + a.trip_time).localeCompare(b.trip_date + b.trip_time));
+  localStorage.setItem(scheduleKey(), JSON.stringify(schedules));
 
   showToast(MSG.schedule.addSuccess, "success");
   event.target.reset(); // 폼 초기화
@@ -335,6 +339,14 @@ async function editHandler(event) {
 
   if (error) return showToast(MSG.schedule.editFail, "danger");
 
+  // 방별 localStorage도 갱신
+  const schedules = JSON.parse(localStorage.getItem(scheduleKey()) || "[]");
+  const idx = schedules.findIndex((s) => s.id === id);
+  if (idx !== -1) {
+    schedules[idx] = { ...schedules[idx], trip_date, trip_time, content: content.trim() };
+    localStorage.setItem(scheduleKey(), JSON.stringify(schedules));
+  }
+
   showToast(MSG.schedule.editSuccess, "success");
   closeEditForm();
   await renderSchedules(); // 목록 갱신
@@ -365,7 +377,13 @@ async function deleteHandler(scheduleId) {
 
   if (error) return showToast(MSG.schedule.deleteFail, "danger");
 
-  await renderSchedules(); // 목록 갱신
+  // 방별 localStorage에서도 제거
+  const schedules = JSON.parse(localStorage.getItem(scheduleKey()) || "[]");
+  const filtered = schedules.filter((s) => s.id !== scheduleId);
+  localStorage.setItem(scheduleKey(), JSON.stringify(filtered));
+
+  showToast(MSG.schedule.deleteSuccess, "success");
+  await renderSchedules();
 }
 
 /* ══════════════════════════════════════════
