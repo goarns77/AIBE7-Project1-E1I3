@@ -181,42 +181,18 @@ function buildCategoryOptions() {
    예산 — 로드 & 저장
    ═══════════════════════════════ */
 async function loadBudget() {
-  // 방별 예산을 localStorage에서 조회
-  const saved = roomId ? localStorage.getItem(`motrip:budget:${roomId}`) : null;
-  if (saved) {
-    budget = Number(saved) || 0;
-  } else {
-    // Supabase에서 마지막 예산 조회 (이전 데이터 호환)
-    const { data, error } = await supabaseClient
-      .from('budgets')
-      .select('amount')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) { showToast(MSG.budget.loadFail); return; }
-    budget = data?.amount ?? 0;
-  }
+  // 방별 예산을 localStorage에서 조회, 없으면 0
+  budget = roomId ? (Number(localStorage.getItem(`motrip:budget:${roomId}`)) || 0) : 0;
   document.querySelector('#budget-input').value = budget || '';
   updateBudgetUI();
 }
 
 async function handleSaveBudget(e) {
-  // 폼 기본 제출 방지
   e.preventDefault();
   const amount = Number(document.querySelector('#budget-input').value);
   if (!amount || amount <= 0) { showToast(MSG.budget.inputRequired); return; }
 
-  // 방별 예산을 localStorage에 저장
   if (roomId) localStorage.setItem(`motrip:budget:${roomId}`, String(amount));
-
-  // budgets 테이블에도 저장 (이전 데이터 호환)
-  const { error } = await supabaseClient
-    .from('budgets')
-    .insert({ amount, user_id: currentUser?.id ?? null });
-
-  if (error) { showToast(MSG.budget.saveFail); return; }
-
   budget = amount;
   showToast(MSG.budget.saveSuccess);
   updateBudgetUI();
