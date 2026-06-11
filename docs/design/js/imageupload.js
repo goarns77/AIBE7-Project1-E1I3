@@ -48,17 +48,35 @@ async function handleUpload(event) {
   const bucketName = "image"; // Supabase 스토리지 버킷 이름
 
   try {
-    // Supabase 스토리지에 파일 업로드 요청
-    const { data, error } = await supabaseClient
-      .storage
-      .from(bucketName)
-      .upload(safeName, file);
+    // Supabase Storage REST API 직접 호출 (RLS 우회를 위해 auth 헤더 포함)
+    const session = readSBSession();
+    if (!session?.access_token) {
+      showToast("로그인이 필요합니다.");
+      return;
+    }
 
-    // 업로드 실패 시 에러 처리
-    if (error) {
-      console.error("업로드 에러:", error);
-      if (error.message?.includes("Bucket not found")) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(
+      `https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/image/${safeName}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: "sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: file,
+      },
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("업로드 에러:", res.status, errText);
+      if (errText.includes("Bucket not found")) {
         showToast("Supabase에 'image' 버킷을 먼저 생성해 주세요.");
+      } else if (res.status === 401 || res.status === 403) {
+        showToast("업로드 권한이 없습니다. Supabase Storage RLS를 확인해 주세요.");
       } else {
         showToast("이미지 업로드에 실패했습니다.");
       }
@@ -84,23 +102,30 @@ async function handleUpload(event) {
  * @param {HTMLElement} container - 이미지가 표시될 부모 요소
  */
 async function renderImageList(container) {
-  const bucketName = "image"; // 접근할 버킷 이름
-
   try {
-    // 빈 문자열("") 경로로 해당 버킷의 파일 목록 조회
-    const { data: imageList, error } = await supabaseClient
-      .storage
-      .from(bucketName)
-      .list("");
+    const session = readSBSession();
+    if (!session?.access_token) return;
 
-    // 조회 실패 시 에러 로깅 후 종료
-    if (error) {
-      console.error("목록 조회 에러:", error);
-      container.innerHTML = error.message?.includes("Bucket not found")
+    const res = await fetch(
+      "https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/image/",
+      {
+        headers: {
+          apikey: "sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      },
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("목록 조회 에러:", errText);
+      container.innerHTML = errText.includes("Bucket not found")
         ? "<p class='text-warning text-center'>Supabase Storage에 'image' 버킷을 생성해 주세요.</p>"
         : "<p class='text-danger text-center'>이미지를 불러오지 못했습니다.</p>";
       return;
     }
+
+    const imageList = await res.json();
 
     // 조회된 이미지가 없을 경우 빈 상태 메시지 표시
     if (!imageList || imageList.length === 0) {
@@ -111,24 +136,13 @@ async function renderImageList(container) {
     // 기존 내용을 비우고 렌더링 준비
     container.innerHTML = "";
 
-    // 파일 목록을 순회하며 카드 DOM 생성
+    const baseUrl = "https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/public/image/";
+
     for (const image of imageList) {
-      // .emptyFolderPlaceholder 등 쓰레기 데이터 건너뛰기
       if (image.name === ".emptyFolderPlaceholder") continue;
-
-      // 파일명을 통해 Public URL(외부 접근 가능 주소) 획득
-      const { data: urlData } = supabaseClient
-        .storage
-        .from(bucketName)
-        .getPublicUrl(image.name);
-
-      const publicUrl = urlData.publicUrl;
-
-      // 컬럼 및 카드 역할을 할 div 생성 (Bootstrap Grid)
+      const publicUrl = baseUrl + image.name;
       const colDiv = document.createElement("div");
-      colDiv.className = "col-6 col-md-4"; // 모바일 2열, PC 3열
-
-      // 카드 DOM 구조 문자열 템플릿 작성
+      colDiv.className = "col-6 col-md-4";
       colDiv.innerHTML = `
         <div class="card album-card h-100">
           <img src="${publicUrl}" class="album-img" alt="${image.name}" />
@@ -137,12 +151,9 @@ async function renderImageList(container) {
           </div>
         </div>
       `;
-
-      // 컨테이너에 완성된 열(col) 삽입
       container.append(colDiv);
     }
   } catch (err) {
-    // 예외 상황에 대한 안전망
     console.error("렌더링 예외 발생:", err);
   }
 }
