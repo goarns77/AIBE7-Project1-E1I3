@@ -619,6 +619,7 @@ function handleLocatePoi(event) {
 // Day별 일정 보드 렌더링
 function renderBoard() {
   const board = document.querySelector("#itinerary-board");
+  if (!board) return;
   const days = getDays(state.room);
   const items = state.room.itinerary || [];
 
