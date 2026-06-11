@@ -131,8 +131,12 @@ function renderAll() {
 async function renderDashboard() {
   const wrap = document.querySelector("#dashboard");
 
-  // 내 여행 목록 ID를 조회
-  const ids = getMyRooms();
+  // 내 여행 목록 ID를 조회 (localStorage 우선, 없으면 서버 조회 후 캐싱)
+  let ids = getMyRooms();
+  if (!ids.length) {
+    const userRooms = await getRoomsFromServer();
+    ids = userRooms.map(r => r.id);
+  }
 
   // 목록이 없으면 안내 후 종료
   if (!ids.length) {
@@ -699,4 +703,17 @@ function showError() {
   document.querySelector("#join-section").classList.add("d-none");
   document.querySelector("#room-main").classList.add("d-none");
   document.querySelector("#error-section").classList.remove("d-none");
+}
+
+// 서버에서 사용자 소속 여행방을 조회하고 localStorage에 캐싱
+async function getRoomsFromServer() {
+  try {
+    const rooms = await getUserRooms();
+    for (const r of rooms) {
+      if (r.id) rememberRoom(r.id);
+    }
+    return rooms;
+  } catch {
+    return [];
+  }
 }
