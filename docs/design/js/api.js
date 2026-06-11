@@ -240,3 +240,16 @@ async function addItineraryItem(roomId, { day, placeName, address, x, y }) {
 async function removeItineraryItem(roomId, itemId) {
   return sbDelete(`itinerary_items?id=eq.${itemId}`);
 }
+
+// 서버에서 사용자 소속 여행방을 조회하고 localStorage에 캐싱
+async function getRoomsFromServer() {
+  try {
+    const rooms = await getUserRooms();
+    for (const r of rooms) {
+      if (r.id) rememberRoom(r.id);
+    }
+    return rooms;
+  } catch {
+    return [];
+  }
+}

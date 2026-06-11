@@ -207,48 +207,7 @@ body {
 }
 
 /* 추천 카드 (인라인) */
-.recommend-card {
-  background: white;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  margin-top: 0.5rem;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-}
 
-.recommend-card img {
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-  display: block;
-}
-
-.recommend-card-body {
-  padding: 0.75rem 1rem;
-}
-
-.recommend-card-body h6 {
-  font-weight: 700;
-  font-size: 0.9375rem;
-  margin-bottom: 0.25rem;
-}
-
-.recommend-card-body p {
-  font-size: 0.8125rem;
-  color: var(--on-surface-variant);
-  margin-bottom: 0;
-}
-
-.recommend-card-body .badge {
-  background: var(--secondary-container);
-  color: var(--secondary);
-  font-weight: 600;
-  font-size: 0.6875rem;
-  border-radius: 9999px;
-  padding: 0.2rem 0.6rem;
-  margin-top: 0.375rem;
-  display: inline-block;
-}
 
 /* 입력 영역 - glassmorphic */
 .chat-input-area {
@@ -313,42 +272,6 @@ body {
 .btn-send:active {
   transform: scale(0.95);
 }
-
-/* 추천 칩 */
-.suggestion-chips {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0 1.5rem 0.75rem;
-  flex-shrink: 0;
-  overflow-x: auto;
-  flex-wrap: nowrap;
-}
-
-.suggestion-chips::-webkit-scrollbar {
-  display: none;
-}
-
-.chip {
-  background: var(--surface);
-  border: 1.5px solid var(--outline-variant);
-  border-radius: 9999px;
-  padding: 0.375rem 1rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--on-surface-variant);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-  flex-shrink: 0;
-}
-
-.chip:hover {
-  background: var(--secondary-container);
-  border-color: var(--secondary);
-  color: var(--secondary);
-}
-
-/* 내보내기 버튼 (AI 메시지 hover 시 노출) */
 .btn-export {
   background: none;
   border: 1px solid var(--outline-variant);
@@ -439,9 +362,5 @@ body {
 @media (max-width: 480px) {
   .message {
     max-width: 95%;
-  }
-
-  .suggestion-chips {
-    padding: 0 1rem 0.5rem;
   }
 }
