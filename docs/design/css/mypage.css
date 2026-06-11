@@ -1,0 +1,217 @@
+/* Motrip 맞춤형 대시보드 스타일 */
+.motrip-dashboard {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.motrip-card {
+  background: #ffffff;
+  border-radius: 20px; /* Motrip 스타일의 둥근 라운드 */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); /* 부드러운 그림자 */
+  flex: 1;
+  min-width: 340px;
+  min-height: 560px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.motrip-map {
+  width: 100%;
+  height: 220px;
+  background-color: #f3f4f6;
+}
+
+.motrip-card-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-grow: 1;
+}
+
+.motrip-search-box {
+  display: flex;
+  gap: 8px;
+}
+
+.motrip-input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  outline: none;
+  background: #f9fafb;
+}
+
+.motrip-input:focus {
+  border-color: #4da3f7;
+  background: #fff;
+}
+
+.motrip-btn-dark {
+  padding: 12px 18px;
+  background-color: #2d3748;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.motrip-title-input {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #111827;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px;
+  outline: none;
+}
+.motrip-title-input:focus {
+  background: #f4f9ff;
+  border-color: #4da3f7;
+}
+
+.motrip-desc-input {
+  font-size: 0.9rem;
+  color: #4b5563;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px;
+  height: 70px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.6;
+}
+.motrip-desc-input:focus {
+  background: #f4f9ff;
+  border-color: #4da3f7;
+}
+
+.motrip-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.motrip-form-group label {
+  font-size: 0.85rem;
+  color: #4b5563;
+  font-weight: 600;
+}
+.motrip-date-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.motrip-date {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #4b5563;
+  outline: none;
+}
+
+.motrip-btn-primary {
+  padding: 14px;
+  background-color: #4da3f7; /* Motrip 브랜드 매칭 블루 */
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: auto;
+  box-shadow: 0 4px 12px rgba(77, 163, 247, 0.2);
+  transition: all 0.2s;
+}
+.motrip-btn-primary:hover {
+  background-color: #358fe6;
+  transform: translateY(-1px);
+}
+
+.motrip-panel-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #111827;
+  margin: 0;
+}
+
+.motrip-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  max-height: 460px;
+  padding-right: 4px;
+}
+
+/* 개별 아이템 피드 */
+.motrip-item {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.motrip-item:hover {
+  background-color: #f1f5f9;
+  border-color: #4da3f7;
+  transform: scale(1.01);
+}
+.motrip-item-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #1e293b;
+  margin-bottom: 6px;
+  padding-right: 45px;
+}
+.motrip-item-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.motrip-item-date {
+  font-size: 0.8rem;
+  color: #4da3f7;
+  font-weight: 600;
+}
+.motrip-delete-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  z-index: 10;
+}
+.motrip-delete-btn:hover { background-color: #e60000; }
+
+.motrip-empty {
+  color: #94a3b8;
+  text-align: center;
+  font-size: 0.9rem;
+  margin-top: 140px;
+  line-height: 1.6;
+}
+.motrip-tip {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0;
+}
