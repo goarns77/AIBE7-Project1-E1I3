@@ -42,8 +42,9 @@ async function handleUpload(event) {
     return;
   }
 
-  // 충돌 방지를 위한 랜덤 파일명 생성 (uuid-기존파일명)
-  const newFileName = `${crypto.randomUUID()}-${file.name}`;
+  // 충돌 방지 및 한글 파일명 처리: UUID + 확장자만 사용
+  const ext = file.name.split('.').pop();
+  const safeName = `${crypto.randomUUID()}.${ext}`;
   const bucketName = "image"; // Supabase 스토리지 버킷 이름
 
   try {
@@ -51,7 +52,7 @@ async function handleUpload(event) {
     const { data, error } = await supabaseClient
       .storage
       .from(bucketName)
-      .upload(newFileName, file);
+      .upload(safeName, file);
 
     // 업로드 실패 시 에러 처리
     if (error) {
