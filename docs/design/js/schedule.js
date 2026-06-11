@@ -70,6 +70,13 @@ function renderScheduleMarkers(list) {
  * 로그인 여부에 따라 UI 상태와 일정 목록을 갱신한다.
  */
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
+  // SDK가 SIGNED_OUT을 잘못 발생시켜도 sb-session이 유효하면 무시
+  if (event === 'SIGNED_OUT') {
+    try {
+      const raw = localStorage.getItem('sb-session');
+      if (raw && JSON.parse(raw)?.user?.id) return;
+    } catch {}
+  }
   // 세션이 있으면 유저 이메일 표시, 없으면 비로그인 안내
   if (session) {
     userStatusEl.textContent = `${session.user.email} 로 로그인됨`;
