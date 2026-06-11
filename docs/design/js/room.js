@@ -59,6 +59,8 @@ async function init() {
     document.querySelector('.navbar-brand').href = '?roomId=' + roomId;
     // 참여자는 전체 화면을 렌더링
     renderAll();
+    // AI 추천에서 내보낸 메모가 있으면 모달로 표시
+    checkNewMemo(roomId);
   } catch (err) {
     showError();
   }
@@ -78,6 +80,8 @@ function bindStaticListeners() {
   document.querySelector('#delete-room').addEventListener('click', handleDeleteRoom);
   // 장소 검색 폼 제출 핸들러 연결
   document.querySelector('#poi-form').addEventListener('submit', handleSearch);
+  // 메모 모달 열기 버튼
+  document.querySelector('#memo-btn').addEventListener('click', () => openMemoModal(state.room.id));
 }
 
 // 참여 폼 영역만 노출
@@ -225,6 +229,13 @@ function renderHeader() {
   // 주최자(host)에게만 여행방 삭제 버튼 노출
   const isHost = members.some((m) => m.id === state.meId && m.isHost);
   document.querySelector('#delete-room').classList.toggle('d-none', !isHost);
+
+  // 메모 버튼에 저장된 개수 표시
+  const memoKey = `motrip:memo:${id}`;
+  const memoList = JSON.parse(localStorage.getItem(memoKey) || '[]');
+  const memoBtn = document.querySelector('#memo-btn');
+  const badge = memoList.length ? ` <span class="badge bg-primary">${memoList.length}</span>` : '';
+  memoBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size:1rem;">sticky_note_2</span> 메모${badge}`;
 }
 
 // 초대 링크 문자열 생성
@@ -547,4 +558,71 @@ function showError(msg) {
   const errMsg = document.querySelector('#error-message');
   if (msg && errMsg) errMsg.textContent = msg;
   document.querySelector('#error-section').classList.remove('d-none');
+}
+
+// ────── AI 추천 메모 관련 ──────
+
+// AI 추천에서 넘어온 신규 메모 자동 표시
+function checkNewMemo(roomId) {
+  const flag = localStorage.getItem('motrip:memo-new-flag');
+  if (!flag) return;
+  localStorage.removeItem('motrip:memo-new-flag');
+  openMemoModal(roomId);
+}
+
+// 메모 모달 열기
+function openMemoModal(roomId) {
+  const key = `motrip:memo:${roomId}`;
+  const memos = JSON.parse(localStorage.getItem(key) || '[]');
+  const body = document.querySelector('#memo-body');
+  const modalEl = document.querySelector('#memoModal');
+
+  if (!memos.length) {
+    body.innerHTML = '<p class="text-center text-secondary py-4">저장된 메모가 없습니다.</p>';
+  } else {
+    body.innerHTML = memos.map((m, i) => `
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <small class="text-secondary">${new Date(m.exportedAt).toLocaleString()}</small>
+            <button class="btn btn-sm btn-link text-danger p-0 memo-delete" data-index="${i}">
+              <span class="material-symbols-outlined" style="font-size:1rem;">delete</span>
+            </button>
+          </div>
+          <div class="memo-content">${renderMemoContent(m.content)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    body.querySelectorAll('.memo-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.index);
+        memos.splice(idx, 1);
+        if (memos.length) {
+          localStorage.setItem(key, JSON.stringify(memos));
+        } else {
+          localStorage.removeItem(key);
+        }
+        openMemoModal(roomId);
+        renderHeader();
+      });
+    });
+  }
+
+  bootstrap.Modal.getOrCreateInstance(modalEl).show();
+
+  // 모두 삭제
+  document.querySelector('#memo-clear-all').onclick = () => {
+    localStorage.removeItem(key);
+    modalEl.querySelector('.btn-close')?.click();
+    renderHeader();
+  };
+}
+
+// 마크다운 또는 일반 텍스트 렌더링
+function renderMemoContent(text) {
+  if (typeof marked !== 'undefined') {
+    return marked.parse(text, { breaks: true, gfm: true });
+  }
+  return String(text).replace(/\n/g, '<br>');
 }

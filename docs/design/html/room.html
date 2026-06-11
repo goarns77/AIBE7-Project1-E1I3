@@ -23,6 +23,7 @@
   <!-- Supabase SDK + Chart.js (schedule·finance 모듈 로직용) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.6/marked.min.js"></script>
 </head>
 
 <body>
@@ -113,8 +114,11 @@
             </button>
           </div>
 
-          <!-- 여행방 삭제 (주최자만 노출) -->
-          <div class="text-end mt-3">
+          <!-- 여행방 삭제 + 메모 버튼 -->
+          <div class="d-flex gap-2 mt-3 justify-content-end">
+            <button id="memo-btn" class="btn btn-sm btn-outline-secondary btn-pill" type="button">
+              <span class="material-symbols-outlined" style="font-size:1rem;">sticky_note_2</span> 메모
+            </button>
             <button id="delete-room" class="btn btn-sm btn-link text-danger text-decoration-none d-none" type="button">
               <span class="material-symbols-outlined" style="font-size:1rem;">delete_forever</span> 여행방 삭제
             </button>
@@ -380,6 +384,23 @@
       <p id="error-message" class="text-secondary mb-4">링크가 올바른지 확인해 주세요.</p>
       <a class="btn btn-primary btn-pill px-4" href="./room-create.html">새 여행방 만들기</a>
     </section>
+
+    <!-- AI 추천 메보 모달 -->
+    <div class="modal fade" id="memoModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content rounded-4">
+          <div class="modal-header">
+            <h5 class="modal-title"><span class="material-symbols-outlined me-1">sticky_note_2</span> AI 추천 메모</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body" id="memo-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-danger btn-pill" id="memo-clear-all">모두 삭제</button>
+            <button type="button" class="btn btn-primary btn-pill" data-bs-dismiss="modal">닫기</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </main>
 
