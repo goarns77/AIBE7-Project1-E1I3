@@ -46,6 +46,15 @@ function createMessage (type, content) {
   wrapper.appendChild(avatar);
   wrapper.appendChild(bubble);
 
+  if (isAI) {
+    const exportBtn = document.createElement('button');
+    exportBtn.className = 'btn-export';
+    exportBtn.innerHTML = '<i class="bi bi-journal-plus"></i>';
+    exportBtn.title = '메모로 내보내기';
+    exportBtn.addEventListener('click', handleExportMessage);
+    wrapper.appendChild(exportBtn);
+  }
+
   return wrapper;
 }
 
@@ -56,11 +65,35 @@ function renderMarkdown (text) {
   return marked.parse(text, { breaks: true, gfm: true });
 }
 
-function addMessage (type, content) {
+function addMessage (type, content, rawContent) {
   const html = type === 'ai' ? renderMarkdown(content) : content;
   const msg = createMessage(type, html);
+  if (type === 'ai') msg.dataset.raw = rawContent || content;
   chatMessages.appendChild(msg);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// ────── AI 메시지 메모로 내보내기 ──────
+
+function handleExportMessage (event) {
+  event.stopPropagation();
+  const msgEl = event.currentTarget.closest('.message');
+  const raw = msgEl?.dataset?.raw;
+  if (!raw) { showToast('내보낼 내용이 없습니다.'); return; }
+
+  const roomId = localStorage.getItem('motrip:lastRoomId');
+  if (!roomId) { showToast('먼저 여행방에 입장해 주세요.'); return; }
+
+  const key = `motrip:memo:${roomId}`;
+  const existing = JSON.parse(localStorage.getItem(key) || '[]');
+  existing.push({ content: raw, exportedAt: new Date().toISOString() });
+  localStorage.setItem(key, JSON.stringify(existing));
+  localStorage.setItem('motrip:memo-new-flag', '1');
+
+  showToast('메모가 저장되었습니다!');
+  setTimeout(() => {
+    window.location.href = `./room.html?roomId=${roomId}`;
+  }, 800);
 }
 
 // ────── 채팅 내역 불러오기 ──────
@@ -69,7 +102,7 @@ async function loadChatHistory () {
   const local = loadFromLocal();
   if (local && local.length > 0) {
     for (const msg of local) {
-      addMessage(msg.role === 'user' ? 'user' : 'ai', msg.html || msg.text);
+      addMessage(msg.role === 'user' ? 'user' : 'ai', msg.html || msg.text, msg.text);
     }
     return;
   }
@@ -90,7 +123,7 @@ async function loadChatHistory () {
     for (const msg of data) {
       const content = msg.html_content || msg.content || '';
       if (!content) continue;
-      addMessage(msg.role === 'user' ? 'user' : 'ai', content);
+      addMessage(msg.role === 'user' ? 'user' : 'ai', content, msg.content);
       localCopy.push({ role: msg.role, text: msg.content || '', html: msg.html_content || '' });
     }
     saveToLocal(localCopy);
@@ -334,13 +367,6 @@ chatInput.addEventListener('keydown', (e) => {
     e.preventDefault();
     sendMessage();
   }
-});
-
-document.querySelectorAll('.chip').forEach((chip) => {
-  chip.addEventListener('click', () => {
-    chatInput.value = chip.textContent.trim();
-    sendMessage();
-  });
 });
 
 if (newChatBtn) {

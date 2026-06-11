@@ -11,6 +11,20 @@ function init() {
   document.querySelector('#copy-invite').addEventListener('click', handleCopy);
   // 초대 링크 참여 폼 제출 핸들러 연결
   document.querySelector('#join-form').addEventListener('submit', handleJoinByInvite);
+  // 플래너 링크 클릭 시 방 목록에 따라 이동
+  const planner = document.querySelector('#navPlanner');
+  if (planner) planner.addEventListener('click', handlePlannerClick);
+}
+
+// 플래너 링크 클릭 — 방 목록 있으면 첫 방 이동, 없으면 현재 유지
+async function handlePlannerClick(event) {
+  event.preventDefault();
+  try {
+    const rooms = await getUserRooms();
+    if (rooms.length) {
+      window.location.href = `room.html?roomId=${rooms[0].id}`;
+    }
+  } catch {}
 }
 
 // 여행방 생성 submit 핸들러
@@ -109,7 +123,10 @@ async function handleJoinByInvite(event) {
       btn.disabled = false;
       btn.innerHTML = '<span class="material-symbols-outlined">login</span> 참여하기';
       return;
-    }
+  // 플래너 링크 클릭 시 방 목록에 따라 이동
+  const planner = document.querySelector('#navPlanner');
+  if (planner) planner.addEventListener('click', handlePlannerClick);
+}
     // 참여 API 호출
     const me = await joinRoom(roomId, { nickname });
     localStorage.setItem(`motrip:me:${roomId}`, me.id);

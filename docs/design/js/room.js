@@ -57,8 +57,12 @@ async function init() {
     localStorage.setItem('motrip:lastRoomId', roomId);
     // 로고 클릭 시 현재 방 유지
     document.querySelector('.navbar-brand').href = '?roomId=' + roomId;
+    // 플래너 링크도 현재 페이지 새로고침
+    document.querySelector('#nav-planner').href = location.href;
     // 참여자는 전체 화면을 렌더링
     renderAll();
+    // AI 추천에서 내보낸 메모가 있으면 모달로 표시
+    checkNewMemo(roomId);
   } catch (err) {
     showError();
   }
@@ -78,6 +82,8 @@ function bindStaticListeners() {
   document.querySelector('#delete-room').addEventListener('click', handleDeleteRoom);
   // 장소 검색 폼 제출 핸들러 연결
   document.querySelector('#poi-form').addEventListener('submit', handleSearch);
+  // 메모 모달 열기 버튼
+  document.querySelector('#memo-btn').addEventListener('click', () => openMemoModal(state.room.id));
 }
 
 // 참여 폼 영역만 노출
@@ -142,14 +148,10 @@ async function renderDashboard() {
         const active = r.id === state.room.id;
         const badge = active ? ' <span class="badge text-bg-primary">현재</span>' : '';
         const period = `${r.start_date || '?'} ~ ${r.end_date || '?'}`;
-        // 이 방에서 내 멤버가 주최자인지 확인
-        const myMemId = localStorage.getItem(meKey(r.id));
-        const isHost = (r.members || []).some((m) => m.id === myMemId && m.is_host);
-        const delBtn = isHost
-          ? `<button class="btn btn-sm btn-link text-danger p-0 dash-delete" data-room="${r.id}" title="여행방 삭제">
+        // 모든 멤버에게 삭제 버튼 표시 (확인 대화상자로 보호)
+        const delBtn = `<button class="btn btn-sm btn-link text-danger p-0 dash-delete" data-room="${r.id}" title="여행방 삭제">
               <span class="material-symbols-outlined" style="font-size:1rem;">close</span>
-            </button>`
-          : '';
+            </button>`;
         return `
           <div class="dash-card p-3 rounded-3 border bg-white ${active ? 'border-primary' : ''}" data-room="${r.id}" style="min-width:190px; cursor:pointer;">
             <div class="d-flex justify-content-between align-items-start">
@@ -222,9 +224,15 @@ function renderHeader() {
   // 초대 링크 구성 후 입력 칸에 표시
   document.querySelector('#invite-link').value = buildInviteLink(id, inviteCode);
 
-  // 주최자(host)에게만 여행방 삭제 버튼 노출
-  const isHost = members.some((m) => m.id === state.meId && m.isHost);
-  document.querySelector('#delete-room').classList.toggle('d-none', !isHost);
+  // 모든 멤버에게 여행방 삭제 버튼 노출 (확인 대화상자로 보호)
+  document.querySelector('#delete-room').classList.remove('d-none');
+
+  // 메모 버튼에 저장된 개수 표시
+  const memoKey = `motrip:memo:${id}`;
+  const memoList = JSON.parse(localStorage.getItem(memoKey) || '[]');
+  const memoBtn = document.querySelector('#memo-btn');
+  const badge = memoList.length ? ` <span class="badge bg-primary">${memoList.length}</span>` : '';
+  memoBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size:1rem;">sticky_note_2</span> 메모${badge}`;
 }
 
 // 초대 링크 문자열 생성
@@ -547,4 +555,102 @@ function showError(msg) {
   const errMsg = document.querySelector('#error-message');
   if (msg && errMsg) errMsg.textContent = msg;
   document.querySelector('#error-section').classList.remove('d-none');
+}
+
+// ────── AI 추천 메모 관련 ──────
+
+// AI 추천에서 넘어온 신규 메모 자동 표시
+function checkNewMemo(roomId) {
+  const flag = localStorage.getItem('motrip:memo-new-flag');
+  if (!flag) return;
+  localStorage.removeItem('motrip:memo-new-flag');
+  openMemoModal(roomId);
+}
+
+// 메모 모달 열기
+function openMemoModal(roomId) {
+  const key = `motrip:memo:${roomId}`;
+  const memos = JSON.parse(localStorage.getItem(key) || '[]');
+  const body = document.querySelector('#memo-body');
+  const modalEl = document.querySelector('#memoModal');
+
+  if (!memos.length) {
+    body.innerHTML = '<p class="text-center text-secondary py-4">저장된 메모가 없습니다.</p>';
+  } else {
+    body.innerHTML = memos.map((m, i) => `
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <small class="text-secondary">${new Date(m.exportedAt).toLocaleString()}</small>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-link text-secondary p-0 memo-edit" data-index="${i}">
+                <span class="material-symbols-outlined" style="font-size:1rem;">edit</span>
+              </button>
+              <button class="btn btn-sm btn-link text-danger p-0 memo-delete" data-index="${i}">
+                <span class="material-symbols-outlined" style="font-size:1rem;">delete</span>
+              </button>
+            </div>
+          </div>
+          <div class="memo-content" data-index="${i}">${renderMemoContent(m.content)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    body.querySelectorAll('.memo-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.index);
+        memos.splice(idx, 1);
+        if (memos.length) {
+          localStorage.setItem(key, JSON.stringify(memos));
+        } else {
+          localStorage.removeItem(key);
+        }
+        openMemoModal(roomId);
+        renderHeader();
+      });
+    });
+
+    body.querySelectorAll('.memo-edit').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.index);
+        const contentEl = body.querySelector(`.memo-content[data-index="${idx}"]`);
+        const isEditing = contentEl.querySelector('textarea');
+        if (isEditing) {
+          const text = isEditing.value;
+          memos[idx].content = text;
+          localStorage.setItem(key, JSON.stringify(memos));
+          openMemoModal(roomId);
+          renderHeader();
+        } else {
+          const raw = memos[idx].content;
+          contentEl.innerHTML = `<textarea class="form-control input-soft memo-edit-textarea" rows="6">${escapeHtml(raw)}</textarea>
+            <button class="btn btn-sm btn-primary btn-pill mt-2 memo-save">저장</button>`;
+          contentEl.querySelector('.memo-save').addEventListener('click', () => {
+            const text = contentEl.querySelector('textarea').value;
+            memos[idx].content = text;
+            localStorage.setItem(key, JSON.stringify(memos));
+            openMemoModal(roomId);
+            renderHeader();
+          });
+        }
+      });
+    });
+  }
+
+  bootstrap.Modal.getOrCreateInstance(modalEl).show();
+
+  // 모두 삭제
+  document.querySelector('#memo-clear-all').onclick = () => {
+    localStorage.removeItem(key);
+    modalEl.querySelector('.btn-close')?.click();
+    renderHeader();
+  };
+}
+
+// 마크다운 또는 일반 텍스트 렌더링
+function renderMemoContent(text) {
+  if (typeof marked !== 'undefined') {
+    return marked.parse(text, { breaks: true, gfm: true });
+  }
+  return String(text).replace(/\n/g, '<br>');
 }
