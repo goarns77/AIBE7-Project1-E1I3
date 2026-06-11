@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="../css/room.css">
   <!-- finance 모듈 스타일(렌더 클래스용) -->
   <link rel="stylesheet" href="../../finance/css/finance.css">
+  <link rel="stylesheet" href="../css/imageupload.css">
   <!-- Supabase SDK + Chart.js (schedule·finance 모듈 로직용) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -226,6 +227,26 @@
         </div>
       </section>
 
+      <!-- 앨범 (사진 업로드) -->
+      <section class="mb-5">
+        <div class="mb-3">
+          <span class="vote-chip mb-2"><span class="material-symbols-outlined">photo_album</span> 앨범</span>
+          <h2 class="h4 mb-1">여행 앨범</h2>
+          <p class="text-secondary mb-0">여행 사진을 공유해 보세요.</p>
+        </div>
+        <div class="card rounded-4xl">
+          <div class="card-body p-4">
+            <form id="upload-form" class="d-flex gap-2 mb-3">
+              <input type="file" id="image-file" class="form-control input-soft" accept="image/*" required>
+              <button type="submit" class="btn btn-primary btn-pill px-4">업로드</button>
+            </form>
+            <div class="row g-2" id="image-list">
+              <p class="text-center text-muted small py-3">사진을 업로드해 주세요.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- 그룹 투표 -->
       <section class="mb-4">
         <div class="mb-3">
@@ -384,7 +405,7 @@
       <a class="btn btn-primary btn-pill px-4" href="./room-create.html">새 여행방 만들기</a>
     </section>
 
-    <!-- AI 추천 메보 모달 -->
+    <!-- AI 추천 메모 모달 -->
     <div class="modal fade" id="memoModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content rounded-4">
@@ -439,6 +460,7 @@
   <script src="../js/supabase-client.js"></script>
   <script src="../js/schedule.js"></script>
   <script src="../../finance/js/finance.js"></script>
+  <script src="../js/imageupload.js"></script>
   <script src="../js/room.js"></script>
 
 </body>
