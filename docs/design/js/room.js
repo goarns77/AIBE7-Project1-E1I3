@@ -13,8 +13,8 @@ document.addEventListener("DOMContentLoaded", init);
 
 // 여행방 화면 초기화
 async function init() {
-  // URL 쿼리에서 여행방 ID 추출
-  const { roomId } = Object.fromEntries(new URLSearchParams(location.search));
+  // URL 쿼리에서 여행방 ID와 초대 코드 추출
+  const { roomId, code } = Object.fromEntries(new URLSearchParams(location.search));
 
   // ID가 없으면 오류 화면 표시
   if (!roomId) {
@@ -30,8 +30,12 @@ async function init() {
     state.room = await getRoom(roomId);
     state.meId = localStorage.getItem(meKey(roomId));
 
-    // 미참여 방문자는 참여 폼을 노출
+    // 미참여 방문자는 초대 코드 검증 후 참여 폼 노출
     if (!state.meId) {
+      if (code && code !== state.room.inviteCode) {
+        showError("초대 링크가 올바르지 않습니다.");
+        return;
+      }
       showJoin();
       return;
     }
@@ -41,6 +45,7 @@ async function init() {
     // 참여자는 전체 화면을 렌더링
     renderAll();
   } catch (err) {
+    console.error("room init error:", err);
     showError();
   }
 }
@@ -126,8 +131,12 @@ function renderAll() {
 async function renderDashboard() {
   const wrap = document.querySelector("#dashboard");
 
-  // 내 여행 목록 ID를 조회
-  const ids = getMyRooms();
+  // 내 여행 목록 ID를 조회 (localStorage 우선, 없으면 서버 조회 후 캐싱)
+  let ids = getMyRooms();
+  if (!ids.length) {
+    const userRooms = await getRoomsFromServer();
+    ids = userRooms.map(r => r.id);
+  }
 
   // 목록이 없으면 안내 후 종료
   if (!ids.length) {
@@ -564,7 +573,7 @@ function renderPoiResults(places) {
         <div class="text-secondary small mb-2">${escapeHtml(p.road_address_name || p.address_name)}</div>
         <div class="d-flex gap-2">
           <select class="form-select form-select-sm poi-day">${dayOpts}</select>
-          <button class="btn btn-sm btn-primary btn-pill px-3 poi-add" type="button">추가</button>
+          <button class="btn btn-sm btn-primary btn-pill px-3 poi-add" type="button">일정에 추가</button>
         </div>
       </div>`,
     )
@@ -579,29 +588,20 @@ function renderPoiResults(places) {
     .forEach((b) => b.addEventListener("click", handleLocatePoi));
 }
 
-// 검색 결과 장소를 선택한 Day에 추가
+// 검색 결과 장소를 일정 추가 폼에 채우기
 async function handleAddPlace(event) {
-  // 카드 데이터와 선택된 Day 추출
   const card = event.currentTarget.closest(".poi-card");
-  const { x, y, name, address } = card.dataset;
+  const { name, address, x, y } = card.dataset;
   const day = card.querySelector(".poi-day").value;
 
-  try {
-    // 일정 추가 API 호출 후 화면·마커 갱신
-    await addItineraryItem(state.room.id, {
-      day,
-      placeName: name,
-      address,
-      x,
-      y,
-    });
-    state.room = await getRoom(state.room.id);
-    showToast(MSG.itinerary.added);
-    renderBoard();
-    refreshMarkers();
-  } catch (err) {
-    showToast(MSG.common.networkError);
-  }
+  const placeEl = document.querySelector("#sch-add-place");
+  if (!placeEl) return;
+  placeEl.value = address ? `${name} (${address})` : name;
+  document.querySelector("#sch-add-x").value = x;
+  document.querySelector("#sch-add-y").value = y;
+  document.querySelector("#sch-add-date").value = day && day !== "unscheduled" ? day : "";
+  document.querySelector("#add-schedule-form").scrollIntoView({ behavior: "smooth", block: "center" });
+  showToast(MSG.map.addedToForm);
 }
 
 // 검색 결과 클릭 시 지도 중심 이동
@@ -614,6 +614,7 @@ function handleLocatePoi(event) {
 // Day별 일정 보드 렌더링
 function renderBoard() {
   const board = document.querySelector("#itinerary-board");
+  if (!board) return;
   const days = getDays(state.room);
   const items = state.room.itinerary || [];
 
@@ -702,4 +703,17 @@ function showError() {
   document.querySelector("#join-section").classList.add("d-none");
   document.querySelector("#room-main").classList.add("d-none");
   document.querySelector("#error-section").classList.remove("d-none");
+}
+
+// 서버에서 사용자 소속 여행방을 조회하고 localStorage에 캐싱
+async function getRoomsFromServer() {
+  try {
+    const rooms = await getUserRooms();
+    for (const r of rooms) {
+      if (r.id) rememberRoom(r.id);
+    }
+    return rooms;
+  } catch {
+    return [];
+  }
 }

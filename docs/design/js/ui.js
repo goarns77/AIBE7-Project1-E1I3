@@ -48,26 +48,33 @@ function avatarHtml(nickname) {
   return `<span class="avatar" title="${escapeHtml(nickname)}">${escapeHtml(initial)}</span>`;
 }
 
-// 내가 만들거나 참여한 여행방 ID 목록 반환(로그인 전 로컬 기준)
+// 내가 만들거나 참여한 여행방 ID 목록 반환(사용자별 localStorage 키)
 function getMyRooms() {
-  // 저장된 목록을 역직렬화
-  const raw = localStorage.getItem('motrip:myRooms');
+  // 이전 단일 키(motrip:myRooms)가 남아 있으면 제거 (v1→v2 마이그레이션)
+  if (localStorage.getItem('motrip:myRooms')) {
+    localStorage.removeItem('motrip:myRooms');
+  }
+  const userId = getCurrentUserId();
+  if (!userId) return [];
+  const raw = localStorage.getItem(`motrip:myRooms:${userId}`);
   return raw ? JSON.parse(raw) : [];
 }
 
-// 여행방 ID를 내 목록 맨 앞에 추가(중복 방지)
+// 여행방 ID를 내 목록 맨 앞에 추가(중복 방지, 사용자별 저장)
 function rememberRoom(roomId) {
+  const userId = getCurrentUserId();
+  if (!userId) return;
   const ids = getMyRooms();
-  // 이미 있으면 그대로, 없으면 추가
   if (!ids.includes(roomId)) {
     ids.unshift(roomId);
-    localStorage.setItem('motrip:myRooms', JSON.stringify(ids));
+    localStorage.setItem(`motrip:myRooms:${userId}`, JSON.stringify(ids));
   }
 }
 
-// 여행방 ID를 내 목록에서 제거
+// 여행방 ID를 내 목록에서 제거 (사용자별 저장)
 function forgetRoom(roomId) {
-  // 해당 ID를 제외하고 다시 저장
+  const userId = getCurrentUserId();
+  if (!userId) return;
   const ids = getMyRooms().filter((id) => id !== roomId);
-  localStorage.setItem('motrip:myRooms', JSON.stringify(ids));
+  localStorage.setItem(`motrip:myRooms:${userId}`, JSON.stringify(ids));
 }
