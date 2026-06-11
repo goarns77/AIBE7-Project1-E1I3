@@ -16,9 +16,22 @@ async function init() {
   // URL 쿼리에서 여행방 ID와 초대 코드 추출
   const { roomId, code } = Object.fromEntries(new URLSearchParams(location.search));
 
-  // ID가 없으면 오류 화면 표시
+  // ID가 없으면 사용자의 첫 여행방으로 이동 (localStorage → 서버)
   if (!roomId) {
-    showError();
+    const first = findFirstRoom();
+    if (first) {
+      location.href = `?roomId=${first}`;
+      return;
+    }
+    try {
+      const rooms = await getUserRooms();
+      if (rooms.length) {
+        location.href = `?roomId=${rooms[0].id}`;
+        return;
+      }
+    } catch {}
+    // 방이 없으면 생성 페이지로
+    location.href = "./room-create.html";
     return;
   }
 
@@ -46,8 +59,21 @@ async function init() {
     renderAll();
   } catch (err) {
     console.error("room init error:", err);
+    // 방을 찾을 수 없으면 첫 여행방으로 이동
     showError();
+    try {
+      const rooms = await getUserRooms();
+      if (rooms.length) {
+        location.href = `?roomId=${rooms[0].id}`;
+      }
+    } catch {}
   }
+}
+
+// localStorage에서 첫 여행방 ID 조회
+function findFirstRoom() {
+  const ids = getMyRooms();
+  return ids.length ? ids[0] : null;
 }
 
 // 정적 폼·버튼 핸들러를 연결
@@ -703,17 +729,4 @@ function showError() {
   document.querySelector("#join-section").classList.add("d-none");
   document.querySelector("#room-main").classList.add("d-none");
   document.querySelector("#error-section").classList.remove("d-none");
-}
-
-// 서버에서 사용자 소속 여행방을 조회하고 localStorage에 캐싱
-async function getRoomsFromServer() {
-  try {
-    const rooms = await getUserRooms();
-    for (const r of rooms) {
-      if (r.id) rememberRoom(r.id);
-    }
-    return rooms;
-  } catch {
-    return [];
-  }
 }
