@@ -55,6 +55,7 @@ async function init() {
 
     // 멤버인 방을 내 여행 목록에 기록
     rememberRoom(roomId);
+    localStorage.setItem("motrip:lastRoomId", roomId);
     // 참여자는 전체 화면을 렌더링
     renderAll();
   } catch (err) {

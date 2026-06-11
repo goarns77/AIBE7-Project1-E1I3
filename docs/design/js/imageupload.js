@@ -107,12 +107,15 @@ async function renderImageList(container) {
     if (!session?.access_token) return;
 
     const res = await fetch(
-      "https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/image/",
+      "https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/list/image",
       {
+        method: "POST",
         headers: {
           apikey: "sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK",
           Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ prefix: "", limit: 100, offset: 0 }),
       },
     );
 
