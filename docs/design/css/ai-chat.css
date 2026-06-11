@@ -313,42 +313,6 @@ body {
 .btn-send:active {
   transform: scale(0.95);
 }
-
-/* 추천 칩 */
-.suggestion-chips {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0 1.5rem 0.75rem;
-  flex-shrink: 0;
-  overflow-x: auto;
-  flex-wrap: nowrap;
-}
-
-.suggestion-chips::-webkit-scrollbar {
-  display: none;
-}
-
-.chip {
-  background: var(--surface);
-  border: 1.5px solid var(--outline-variant);
-  border-radius: 9999px;
-  padding: 0.375rem 1rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--on-surface-variant);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-  flex-shrink: 0;
-}
-
-.chip:hover {
-  background: var(--secondary-container);
-  border-color: var(--secondary);
-  color: var(--secondary);
-}
-
-/* 내보내기 버튼 (AI 메시지 hover 시 노출) */
 .btn-export {
   background: none;
   border: 1px solid var(--outline-variant);
@@ -439,9 +403,5 @@ body {
 @media (max-width: 480px) {
   .message {
     max-width: 95%;
-  }
-
-  .suggestion-chips {
-    padding: 0 1rem 0.5rem;
   }
 }
