@@ -13,8 +13,9 @@ document.addEventListener('DOMContentLoaded', init);
 
 // 여행방 화면 초기화
 async function init() {
-  // URL 쿼리에서 여행방 ID 추출
-  let { roomId } = Object.fromEntries(new URLSearchParams(location.search));
+  // URL 쿼리에서 여행방 ID와 초대 코드 추출
+  const params = Object.fromEntries(new URLSearchParams(location.search));
+  let { roomId, code } = params;
 
   // ID가 없으면 마지막 방문 방 → 사용자 방 목록 순으로 리다이렉트
   if (!roomId) {
@@ -42,8 +43,12 @@ async function init() {
     state.room = await getRoom(roomId);
     state.meId = localStorage.getItem(meKey(roomId));
 
-    // 미참여 방문자는 참여 폼을 노출
+    // 미참여 방문자는 초대 코드 검증 후 참여 폼을 노출
     if (!state.meId) {
+      if (code && code !== state.room.inviteCode) {
+        showError('초대 링크가 올바르지 않습니다.');
+        return;
+      }
       showJoin();
       return;
     }
@@ -536,8 +541,10 @@ function handleAddPoiToSchedule(event) {
 }
 
 // 여행방을 찾지 못했을 때 오류 화면 표시
-function showError() {
+function showError(msg) {
   document.querySelector('#join-section').classList.add('d-none');
   document.querySelector('#room-main').classList.add('d-none');
+  const errMsg = document.querySelector('#error-message');
+  if (msg && errMsg) errMsg.textContent = msg;
   document.querySelector('#error-section').classList.remove('d-none');
 }

@@ -97,6 +97,35 @@
 
     </section>
 
+    <!-- 초대 링크로 참여 -->
+    <section id="join-section" class="mt-5 pt-4 border-top">
+      <div class="text-center mb-4">
+        <span class="vote-chip mb-3"><span class="material-symbols-outlined">link</span> 초대 링크로 참여</span>
+        <h2 class="h4 mb-2">초대받은 여행방이 있나요?</h2>
+        <p class="text-secondary">친구에게 받은 초대 링크를 붙여넣고 참여하세요.</p>
+      </div>
+      <div class="card rounded-4xl">
+        <div class="card-body p-4 p-md-5">
+          <form id="join-form" novalidate>
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="invite-input">초대 링크</label>
+              <input id="invite-input" class="form-control input-soft p-3"
+                     placeholder="방장에게 받은 초대 링크를 붙여넣으세요" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="invite-nickname">내 닉네임</label>
+              <input id="invite-nickname" class="form-control input-soft p-3"
+                     placeholder="여행방에서 사용할 닉네임" required>
+            </div>
+            <button type="submit" id="join-btn" class="btn btn-primary btn-pill w-100 py-3">
+              <span class="material-symbols-outlined">login</span> 참여하기
+            </button>
+          </form>
+          <p id="invite-error" class="text-danger small mt-3 mb-0 d-none">초대 링크가 올바르지 않습니다.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- 생성 결과 및 초대 링크 -->
     <section id="result-section" class="d-none">
 

@@ -68,7 +68,7 @@ loginForm.addEventListener('submit', handleLogin);
 
 // OAuth 콜백 확인 (페이지 로드 시 URL hash에 access_token이 있으면 세션 저장 후 리다이렉트)
 (async function checkOAuthCallback () {
-  const session = _supabase.auth._handleOAuthCallback();
+  const session = await _supabase.auth._handleOAuthCallback();
   if (session) {
     await redirectAfterLogin();
   }

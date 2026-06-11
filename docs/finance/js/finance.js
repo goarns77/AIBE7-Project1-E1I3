@@ -102,16 +102,27 @@ async function initFinance() {
   finEditForm.addEventListener('submit', handleEditExpense);
   finEditCancelBtn.addEventListener('click', cancelEdit);
   finLogoutBtn.addEventListener('click', handleLogout);
-  // 현재 로그인 세션 확인
-  try { await checkAuthState(); } catch {}
-  // Supabase 인증 상태 변경 구독 (로그인/로그아웃 감지)
+  // 카테고리 select 옵션 동적 생성
+  buildCategoryOptions();
+  // Supabase 인증 상태 변경 구독 (로그인/로그아웃 감지) — 먼저 구독
   try {
-    supabaseClient.auth.onAuthStateChange((_event, session) => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      // INITIAL_SESSION(null)은 checkAuthState가 덮어쓰므로 무시
+      if (event === 'INITIAL_SESSION' && !session?.user) return;
+      // SDK가 SIGNED_OUT을 잘못 발생시켜도 sb-session이 유효하면 무시
+      if (event === 'SIGNED_OUT') {
+        try {
+          const raw = localStorage.getItem('sb-session');
+          if (raw && JSON.parse(raw)?.user?.id) return;
+        } catch {}
+      }
       currentUser = session?.user ?? null;
       renderAuthUI();
     });
   } catch {}
-  // 카테고리 select 옵션 동적 생성
+  // 현재 로그인 세션 확인 (onAuthStateChange가 null을 설정해도 덮어씀)
+  try { await checkAuthState(); } catch {}
+  // 예산 및 지출 내역 로드
   buildCategoryOptions();
   // 예산 및 지출 내역 로드
   await loadBudget();
@@ -245,10 +256,10 @@ async function loadExpenses() {
   if (error) { showToast(MSG.expense.loadFail); return; }
 
   expenses = data ?? [];
-  renderAll();
+  finRenderAll();
 }
 
-function renderAll() {
+function finRenderAll() {
   // 지출 목록·파이 차트·정산·통계 통합 렌더링
   renderExpenseList();
   renderPieChart();
@@ -267,8 +278,8 @@ function renderExpenseList() {
   expenseList.innerHTML = expenses.map(ex => {
     // 카테고리 메타 정보 찾기
     const cat = CATEGORIES.find(c => c.key === ex.category) ?? CATEGORIES.at(-1);
-    // 작성자 확인 (수정·삭제 버튼 표시 여부)
-    const isOwner = currentUser && ex.user_id === currentUser.id;
+    // 로그인한 모든 멤버가 수정·삭제 가능 (여행방 공동 관리)
+    const isOwner = !!currentUser;
     return `
       <div class="expense-row d-flex align-items-start gap-3 p-3 border-bottom animate-in"
            data-id="${ex.id}">
@@ -298,42 +309,46 @@ function renderExpenseList() {
    지출 — 추가 핸들러
    ═══════════════════════════════ */
 async function handleAddExpense(e) {
-  // 폼 기본 제출 방지
-  e.preventDefault();
+  try {
+    // 폼 기본 제출 방지
+    e.preventDefault();
 
-  // 로그인 체크
-  if (!currentUser) { showToast(MSG.auth.notLoggedIn); return; }
+    // 로그인 체크
+    if (!currentUser) { showToast(MSG.auth.notLoggedIn); return; }
 
-  // 폼 데이터 구조 분해
-  const fd = new FormData(e.target);
-  const expense_date = fd.get('expense_date')?.trim();
-  const category     = fd.get('category');
-  const amount       = Number(fd.get('amount'));
-  const description  = fd.get('description')?.trim();
-  const payer        = fd.get('payer')?.trim() || null;
+    // 폼 데이터 구조 분해
+    const fd = new FormData(e.target);
+    const expense_date = fd.get('expense_date')?.trim();
+    const category     = fd.get('category');
+    const amount       = Number(fd.get('amount'));
+    const description  = fd.get('description')?.trim();
+    const payer        = fd.get('payer')?.trim() || null;
 
-  // 필수 항목 검증
-  if (!expense_date || !category || !description) {
-    showToast(MSG.expense.inputRequired); return;
+    // 필수 항목 검증
+    if (!expense_date || !category || !description) {
+      showToast(MSG.expense.inputRequired); return;
+    }
+    if (!amount || amount <= 0) {
+      showToast(MSG.expense.amountInvalid); return;
+    }
+
+    // Supabase expenses 테이블에 삽입
+    const { data, error } = await supabaseClient
+      .from('expenses')
+      .insert({ expense_date, category, amount, description, payer, user_id: currentUser.id })
+      .select()
+      .single();
+
+    if (error) { showToast(MSG.expense.addFail); return; }
+
+    // 로컬 배열 맨 앞에 추가 후 재렌더링
+    expenses.unshift(data);
+    finRenderAll();
+    e.target.reset();
+    showToast(MSG.expense.addSuccess);
+  } catch (err) {
+    showToast(MSG.common.networkError);
   }
-  if (!amount || amount <= 0) {
-    showToast(MSG.expense.amountInvalid); return;
-  }
-
-  // Supabase expenses 테이블에 삽입
-  const { data, error } = await supabaseClient
-    .from('expenses')
-    .insert({ expense_date, category, amount, description, payer, user_id: currentUser.id })
-    .select()
-    .single();
-
-  if (error) { showToast(MSG.expense.addFail); return; }
-
-  // 로컬 배열 맨 앞에 추가 후 재렌더링
-  expenses.unshift(data);
-  renderAll();
-  e.target.reset();
-  showToast(MSG.expense.addSuccess);
 }
 
 /* ═══════════════════════════════
@@ -362,6 +377,7 @@ async function handleEditExpense(e) {
   // 폼 기본 제출 방지
   e.preventDefault();
   if (!editingId) return;
+  if (!currentUser) { showToast(MSG.auth.notLoggedIn); return; }
 
   const fd = new FormData(e.target);
   const expense_date = fd.get('edit-date')?.trim();
@@ -374,22 +390,28 @@ async function handleEditExpense(e) {
     showToast(MSG.expense.inputRequired); return;
   }
 
-  // Supabase expenses 테이블 업데이트
-  const { data, error } = await supabaseClient
-    .from('expenses')
-    .update({ expense_date, category, amount, description, payer })
-    .eq('id', editingId)
-    .select()
-    .single();
+  // Supabase REST API 직접 호출 (SDK 우회, 명시적 auth header)
+  const session = readSBSession?.() || JSON.parse(localStorage.getItem('sb-session') || '{}');
+  const res = await fetch('https://porvghadkgpamnvbuyqu.supabase.co/rest/v1/expenses?id=eq.' + editingId, {
+    method: 'PATCH',
+    headers: {
+      'apikey': 'sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK',
+      'Authorization': 'Bearer ' + (session?.access_token || ''),
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+    },
+    body: JSON.stringify({ expense_date, category, amount, description, payer }),
+  });
 
-  if (error) { showToast(MSG.expense.editFail); return; }
+  if (!res.ok) { showToast(MSG.expense.editFail); console.error('UPDATE failed:', res.status); return; }
+
+  const data = await res.json();
 
   // 로컬 배열 갱신
   const idx = expenses.findIndex(ex => String(ex.id) === String(editingId));
-  if (idx !== -1) expenses[idx] = data;
 
   cancelEdit();
-  renderAll();
+  finRenderAll();
   showToast(MSG.expense.editSuccess);
 }
 
@@ -406,17 +428,24 @@ function cancelEdit() {
 async function deleteExpense(id) {
   // 삭제 확인 다이얼로그
   if (!confirm(MSG.expense.deleteConfirm)) return;
+  if (!currentUser) { showToast(MSG.auth.notLoggedIn); return; }
 
-  const { error } = await supabaseClient
-    .from('expenses')
-    .delete()
-    .eq('id', id);
+  // Supabase REST API 직접 호출 (SDK 우회, 명시적 auth header)
+  const session = readSBSession?.() || JSON.parse(localStorage.getItem('sb-session') || '{}');
+  const res = await fetch('https://porvghadkgpamnvbuyqu.supabase.co/rest/v1/expenses?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {
+      'apikey': 'sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK',
+      'Authorization': 'Bearer ' + (session?.access_token || ''),
+      'Prefer': 'return=minimal',
+    },
+  });
 
-  if (error) { showToast(MSG.expense.deleteFail); return; }
+  if (!res.ok) { showToast(MSG.expense.deleteFail); console.error('DELETE failed:', res.status); return; }
 
   // 로컬 배열에서 제거 후 재렌더링
   expenses = expenses.filter(ex => String(ex.id) !== String(id));
-  renderAll();
+  finRenderAll();
 }
 
 /* ═══════════════════════════════

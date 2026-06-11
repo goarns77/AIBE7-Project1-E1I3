@@ -3,12 +3,14 @@
 // 페이지 로드 후 핸들러를 연결
 document.addEventListener('DOMContentLoaded', init);
 
-// 초기화 — 폼·복사 버튼 이벤트 바인딩
+// 초기화 — 폼·복사·참여 버튼 이벤트 바인딩
 function init() {
   // 여행방 생성 폼 제출 핸들러 연결
   document.querySelector('#create-form').addEventListener('submit', handleCreate);
   // 초대 링크 복사 버튼 핸들러 연결
   document.querySelector('#copy-invite').addEventListener('click', handleCopy);
+  // 초대 링크 참여 폼 제출 핸들러 연결
+  document.querySelector('#join-form').addEventListener('submit', handleJoinByInvite);
 }
 
 // 여행방 생성 submit 핸들러
@@ -60,4 +62,65 @@ function handleCopy() {
   // 입력 칸의 링크를 클립보드로 복사
   const link = document.querySelector('#invite-link').value;
   copyToClipboard(link, MSG.common.copySuccess, MSG.common.copyFail);
+}
+
+// 초대 링크로 방 정보 조회 → 닉네임 입력 → 참여 → room.html 이동
+async function handleJoinByInvite(event) {
+  event.preventDefault();
+  const input   = document.querySelector('#invite-input');
+  const nick    = document.querySelector('#invite-nickname');
+  const error   = document.querySelector('#invite-error');
+  const btn     = document.querySelector('#join-btn');
+
+  error.classList.add('d-none');
+  const raw = input.value.trim();
+  const nickname = nick.value.trim();
+  if (!raw || !nickname) {
+    error.textContent = '초대 링크와 닉네임을 모두 입력해 주세요.';
+    error.classList.remove('d-none');
+    return;
+  }
+
+  // URL에서 roomId와 code 추출
+  const qs = raw.includes('?') ? raw.slice(raw.indexOf('?'))
+            : raw.includes('&') ? raw.slice(raw.indexOf('&'))
+            : raw.includes('roomId') ? '?' + raw : raw;
+  const params = new URLSearchParams(qs.replace(/^[?&]/, ''));
+  const roomId = params.get('roomId');
+  const code   = params.get('code');
+
+  if (!roomId) {
+    error.textContent = '초대 링크에서 여행방을 찾을 수 없습니다.';
+    error.classList.remove('d-none');
+    return;
+  }
+
+  // 로딩 상태
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> 참여 중...';
+
+  try {
+    // 방 정보 조회
+    const room = await getRoom(roomId);
+    // 초대 코드 검증
+    if (code && code !== room.inviteCode) {
+      error.textContent = '초대 링크가 올바르지 않습니다.';
+      error.classList.remove('d-none');
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-symbols-outlined">login</span> 참여하기';
+      return;
+    }
+    // 참여 API 호출
+    const me = await joinRoom(roomId, { nickname });
+    localStorage.setItem(`motrip:me:${roomId}`, me.id);
+    localStorage.setItem('motrip:lastRoomId', roomId);
+    showToast(`${room.title} 여행방에 참여했습니다!`);
+    // room.html로 이동
+    window.location.href = `room.html?roomId=${roomId}`;
+  } catch (err) {
+    error.textContent = '참여에 실패했습니다. 링크를 확인해 주세요.';
+    error.classList.remove('d-none');
+    btn.disabled = false;
+    btn.innerHTML = '<span class="material-symbols-outlined">login</span> 참여하기';
+  }
 }
