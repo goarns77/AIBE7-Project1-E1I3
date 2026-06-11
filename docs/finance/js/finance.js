@@ -377,6 +377,7 @@ async function handleEditExpense(e) {
   // 폼 기본 제출 방지
   e.preventDefault();
   if (!editingId) return;
+  if (!currentUser) { showToast(MSG.auth.notLoggedIn); return; }
 
   const fd = new FormData(e.target);
   const expense_date = fd.get('edit-date')?.trim();
@@ -389,19 +390,25 @@ async function handleEditExpense(e) {
     showToast(MSG.expense.inputRequired); return;
   }
 
-  // Supabase expenses 테이블 업데이트
-  const { data, error } = await supabaseClient
-    .from('expenses')
-    .update({ expense_date, category, amount, description, payer })
-    .eq('id', editingId)
-    .select()
-    .single();
+  // Supabase REST API 직접 호출 (SDK 우회, 명시적 auth header)
+  const session = readSBSession?.() || JSON.parse(localStorage.getItem('sb-session') || '{}');
+  const res = await fetch('https://porvghadkgpamnvbuyqu.supabase.co/rest/v1/expenses?id=eq.' + editingId, {
+    method: 'PATCH',
+    headers: {
+      'apikey': 'sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK',
+      'Authorization': 'Bearer ' + (session?.access_token || ''),
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+    },
+    body: JSON.stringify({ expense_date, category, amount, description, payer }),
+  });
 
-  if (error) { showToast(MSG.expense.editFail); return; }
+  if (!res.ok) { showToast(MSG.expense.editFail); console.error('UPDATE failed:', res.status); return; }
+
+  const data = await res.json();
 
   // 로컬 배열 갱신
   const idx = expenses.findIndex(ex => String(ex.id) === String(editingId));
-  if (idx !== -1) expenses[idx] = data;
 
   cancelEdit();
   finRenderAll();
@@ -421,13 +428,20 @@ function cancelEdit() {
 async function deleteExpense(id) {
   // 삭제 확인 다이얼로그
   if (!confirm(MSG.expense.deleteConfirm)) return;
+  if (!currentUser) { showToast(MSG.auth.notLoggedIn); return; }
 
-  const { error } = await supabaseClient
-    .from('expenses')
-    .delete()
-    .eq('id', id);
+  // Supabase REST API 직접 호출 (SDK 우회, 명시적 auth header)
+  const session = readSBSession?.() || JSON.parse(localStorage.getItem('sb-session') || '{}');
+  const res = await fetch('https://porvghadkgpamnvbuyqu.supabase.co/rest/v1/expenses?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {
+      'apikey': 'sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK',
+      'Authorization': 'Bearer ' + (session?.access_token || ''),
+      'Prefer': 'return=minimal',
+    },
+  });
 
-  if (error) { showToast(MSG.expense.deleteFail); return; }
+  if (!res.ok) { showToast(MSG.expense.deleteFail); console.error('DELETE failed:', res.status); return; }
 
   // 로컬 배열에서 제거 후 재렌더링
   expenses = expenses.filter(ex => String(ex.id) !== String(id));
