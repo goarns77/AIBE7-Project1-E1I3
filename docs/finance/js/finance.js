@@ -278,8 +278,8 @@ function renderExpenseList() {
   expenseList.innerHTML = expenses.map(ex => {
     // 카테고리 메타 정보 찾기
     const cat = CATEGORIES.find(c => c.key === ex.category) ?? CATEGORIES.at(-1);
-    // 작성자 확인 (수정·삭제 버튼 표시 여부)
-    const isOwner = currentUser && ex.user_id === currentUser.id;
+    // 로그인한 모든 멤버가 수정·삭제 가능 (여행방 공동 관리)
+    const isOwner = !!currentUser;
     return `
       <div class="expense-row d-flex align-items-start gap-3 p-3 border-bottom animate-in"
            data-id="${ex.id}">
