@@ -28,6 +28,8 @@ let currentUser = null;
 let expenses = [];
 // 현재 설정된 총 예산 금액
 let budget = 0;
+// 현재 방 ID (URL에서 추출)
+let roomId = new URLSearchParams(location.search).get('roomId');
 // 파이 차트 인스턴스 (Chart.js)
 let pieChart = null;
 // 수정 중인 지출 ID (null이면 신규 추가 모드)
@@ -179,18 +181,22 @@ function buildCategoryOptions() {
    예산 — 로드 & 저장
    ═══════════════════════════════ */
 async function loadBudget() {
-  // budgets 테이블에서 가장 최근 예산 1건 조회
-  const { data, error } = await supabaseClient
-    .from('budgets')
-    .select('amount')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // 방별 예산을 localStorage에서 조회
+  const saved = roomId ? localStorage.getItem(`motrip:budget:${roomId}`) : null;
+  if (saved) {
+    budget = Number(saved) || 0;
+  } else {
+    // Supabase에서 마지막 예산 조회 (이전 데이터 호환)
+    const { data, error } = await supabaseClient
+      .from('budgets')
+      .select('amount')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  if (error) { showToast(MSG.budget.loadFail); return; }
-
-  // 조회 성공 시 전역 상태에 반영
-  budget = data?.amount ?? 0;
+    if (error) { showToast(MSG.budget.loadFail); return; }
+    budget = data?.amount ?? 0;
+  }
   document.querySelector('#budget-input').value = budget || '';
   updateBudgetUI();
 }
@@ -201,7 +207,10 @@ async function handleSaveBudget(e) {
   const amount = Number(document.querySelector('#budget-input').value);
   if (!amount || amount <= 0) { showToast(MSG.budget.inputRequired); return; }
 
-  // budgets 테이블에 새 예산 행 삽입 (단순 insert 방식 — 최신값 사용)
+  // 방별 예산을 localStorage에 저장
+  if (roomId) localStorage.setItem(`motrip:budget:${roomId}`, String(amount));
+
+  // budgets 테이블에도 저장 (이전 데이터 호환)
   const { error } = await supabaseClient
     .from('budgets')
     .insert({ amount, user_id: currentUser?.id ?? null });
