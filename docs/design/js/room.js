@@ -16,13 +16,20 @@ async function init() {
   // URL 쿼리에서 여행방 ID와 초대 코드 추출
   const { roomId, code } = Object.fromEntries(new URLSearchParams(location.search));
 
-  // ID가 없으면 사용자의 첫 여행방으로 이동
+  // ID가 없으면 사용자의 첫 여행방으로 이동 (localStorage → 서버)
   if (!roomId) {
     const first = findFirstRoom();
     if (first) {
       location.href = `?roomId=${first}`;
       return;
     }
+    try {
+      const rooms = await getUserRooms();
+      if (rooms.length) {
+        location.href = `?roomId=${rooms[0].id}`;
+        return;
+      }
+    } catch {}
     // 방이 없으면 생성 페이지로
     location.href = "./room-create.html";
     return;
@@ -52,7 +59,14 @@ async function init() {
     renderAll();
   } catch (err) {
     console.error("room init error:", err);
+    // 방을 찾을 수 없으면 첫 여행방으로 이동
     showError();
+    try {
+      const rooms = await getUserRooms();
+      if (rooms.length) {
+        location.href = `?roomId=${rooms[0].id}`;
+      }
+    } catch {}
   }
 }
 
