@@ -17,7 +17,6 @@
 | 🗳️ **그룹 투표**          | 선택지 투표 → **막대 그래프**로 결과 집계 (1인 1표, 중복 방지)               |
 | 💰 **지출 / 정산**        | 지출 기록 + 예산 현황 + **최소 송금 횟수 정산**(Greedy) + 카테고리 도넛 차트 |
 | 🤖 **AI 여행 추천**       | Groq(LLM) 기반 맞춤 여행 일정 자동 생성                                      |
-| 📸 **포토 앨범**          | 여행 사진 공유 (imageupload)                                                 |
 | 🧭 **내 여행 대시보드**   | 내가 만들거나 참여한 여행방 목록                                             |
 
 ---
@@ -46,11 +45,6 @@ AIBE7-Project1-E1I3/
 ├── server.js                 # Express 서버 (정적 서빙 + /api/chat)
 ├── package.json
 ├── docs/                     # 웹 루트 (GitHub Pages /docs)
-│   ├── finance.html          # 지출/정산 (단독 페이지)
-│   ├── schedule.html         # 일정 (단독 페이지)
-│   ├── imageupload.html      # 포토 앨범
-│   ├── finance/              # 정산 모듈 (css/js)
-│   ├── schedule/             # 일정 모듈 (css/js)
 │   └── design/
 │       ├── html/             # index, login, signup, room, room-create,
 │       │                     #  room(플래너), ai-chat, mypage, schedule ...
@@ -77,9 +71,10 @@ AIBE7-Project1-E1I3/
 
 ### 1. 의존성 설치
 
-```bash
-npm install
-```
+express
+.env
+nodemon
+cors
 
 ### 2. 환경 변수 (`.env`) — AI 채팅용
 
@@ -87,7 +82,6 @@ npm install
 
 ```
 GROQ_API_KEY=발급받은_Groq_API_키
-PORT=3000
 ```
 
 ### 3. 클라이언트 키 설정 (`docs/design/js/config.js`)
@@ -128,7 +122,6 @@ const CONFIG = {
 | `/design/html/room.html?roomId=...`      | 여행방(플래너) — 지도·일정·투표·정산 통합 |
 | `/design/html/ai-chat.html`              | AI 여행 추천                              |
 | `/design/html/mypage.html`               | 마이페이지                                |
-| `/imageupload.html`                      | 포토 앨범                                 |
 
 ---
 
