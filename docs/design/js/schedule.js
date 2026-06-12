@@ -31,10 +31,6 @@ const addForm = document.querySelector("#add-schedule-form");
 /** 현재 방 ID (URL에서 추출) */
 let roomId = new URLSearchParams(location.search).get("roomId");
 
-/** 방별 일정 localStorage 키 */
-function scheduleKey() {
-  return `motrip:schedules:${roomId || "global"}`;
-}
 
 /** 일정 수정 폼 */
 const editForm = document.querySelector("#edit-schedule-form");
@@ -114,26 +110,27 @@ async function logoutHandler() {
    일정 목록 렌더링 (Read)
 ══════════════════════════════════════════ */
 
-/**
- * 방별 localStorage에서 일정을 불러와 화면에 그린다.
- * 각 일정 카드에는 좋아요 수와 편집/삭제 버튼(본인 일정만)을 포함한다.
- */
 async function renderSchedules() {
   const { data: { user } } = await supabaseClient.auth.getUser();
 
-  const stored = localStorage.getItem(scheduleKey());
-  const schedules = stored ? JSON.parse(stored) : [];
+  const r_id = roomId || "global";
+  const { data: schedules, error } = await supabaseClient
+    .from("schedules")
+    .select("*")
+    .eq("room_id", r_id)
+    .order("trip_date", { ascending: true })
+    .order("trip_time", { ascending: true });
 
-  lastSchedules = schedules;
+  lastSchedules = schedules || [];
   renderScheduleMarkers(lastSchedules);
 
   scheduleList.innerHTML = "";
-  if (!schedules.length) {
+  if (error || !lastSchedules.length) {
     scheduleList.innerHTML = `<p class="text-center text-muted py-4">${MSG.schedule.noData}</p>`;
     return;
   }
 
-  for (const schedule of schedules) {
+  for (const schedule of lastSchedules) {
     const card = await buildScheduleCard(schedule, user);
     scheduleList.appendChild(card);
   }
@@ -256,20 +253,15 @@ async function addHandler(event) {
     return showToast(MSG.schedule.inputRequired, "warning");
   }
 
-  // Supabase에 일정 삽입(위치 포함)
+  const r_id = roomId || "global";
+  // Supabase에 일정 삽입(위치 및 방 ID 포함)
   const { data, error } = await supabaseClient
     .from("schedules")
-    .insert({ trip_date, trip_time, content: content.trim(), user_id: user.id, place_name, place_x, place_y })
+    .insert({ room_id: r_id, trip_date, trip_time, content: content.trim(), user_id: user.id, place_name, place_x, place_y })
     .select()
     .single();
 
   if (error) return showToast(MSG.schedule.addFail, "danger");
-
-  // 방별 localStorage에도 저장
-  const schedules = JSON.parse(localStorage.getItem(scheduleKey()) || "[]");
-  schedules.push(data);
-  schedules.sort((a, b) => (a.trip_date + a.trip_time).localeCompare(b.trip_date + b.trip_time));
-  localStorage.setItem(scheduleKey(), JSON.stringify(schedules));
 
   showToast(MSG.schedule.addSuccess, "success");
   event.target.reset(); // 폼 초기화
@@ -330,22 +322,16 @@ async function editHandler(event) {
     return showToast(MSG.schedule.inputRequired, "warning");
   }
 
+  const r_id = roomId || "global";
   // Supabase 업데이트 (본인 일정만 수정되도록 user_id 조건 추가 — RLS와 이중 방어)
   const { error } = await supabaseClient
     .from("schedules")
     .update({ trip_date, trip_time, content: content.trim() })
     .eq("id", id)
+    .eq("room_id", r_id)
     .eq("user_id", user.id);
 
   if (error) return showToast(MSG.schedule.editFail, "danger");
-
-  // 방별 localStorage도 갱신
-  const schedules = JSON.parse(localStorage.getItem(scheduleKey()) || "[]");
-  const idx = schedules.findIndex((s) => s.id === id);
-  if (idx !== -1) {
-    schedules[idx] = { ...schedules[idx], trip_date, trip_time, content: content.trim() };
-    localStorage.setItem(scheduleKey(), JSON.stringify(schedules));
-  }
 
   showToast(MSG.schedule.editSuccess, "success");
   closeEditForm();
@@ -368,19 +354,16 @@ async function deleteHandler(scheduleId) {
   const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) return showToast(MSG.auth.notLoggedIn, "warning");
 
+  const r_id = roomId || "global";
   // 본인 일정만 삭제 가능하도록 user_id 조건 포함
   const { error } = await supabaseClient
     .from("schedules")
     .delete()
     .eq("id", scheduleId)
+    .eq("room_id", r_id)
     .eq("user_id", user.id);
 
   if (error) return showToast(MSG.schedule.deleteFail, "danger");
-
-  // 방별 localStorage에서도 제거
-  const schedules = JSON.parse(localStorage.getItem(scheduleKey()) || "[]");
-  const filtered = schedules.filter((s) => s.id !== scheduleId);
-  localStorage.setItem(scheduleKey(), JSON.stringify(filtered));
 
   showToast(MSG.schedule.deleteSuccess, "success");
   await renderSchedules();

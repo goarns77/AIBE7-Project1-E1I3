@@ -61,11 +61,9 @@ async function handleUpload(event) {
     showToast("사진이 업로드되었습니다.");
     event.target.reset();
 
-    addAlbumImage(safeName);
-
-    // 전체 목록을 다시 렌더링 (append 방식 버그 우회)
+    // 전체 목록을 다시 렌더링
     const container = document.querySelector("#image-list");
-    renderFromLocalStorage(container);
+    await renderFromSupabase(container);
 
   } catch (err) {
     console.error("예외 발생:", err);
@@ -73,17 +71,36 @@ async function handleUpload(event) {
 }
 
 async function renderImageList(container) {
-  renderFromLocalStorage(container);
+  await renderFromSupabase(container);
 }
 
-function renderFromLocalStorage(container) {
-  const names = getAlbumList();
-  if (!names.length) {
-    container.innerHTML = "<p class='text-center text-muted py-4'>업로드된 이미지가 없습니다.</p>";
-    return;
+async function renderFromSupabase(container) {
+  const rid = roomId || "global";
+  try {
+    const { data, error } = await supabaseClient.storage.from('image').list(rid);
+    
+    if (error) {
+      console.error(error);
+      container.innerHTML = "<p class='text-center text-muted py-4'>이미지를 불러오지 못했습니다.</p>";
+      return;
+    }
+
+    const files = data.filter(f => f.name !== '.emptyFolderPlaceholder');
+    
+    if (!files.length) {
+      container.innerHTML = "<p class='text-center text-muted py-4'>업로드된 이미지가 없습니다.</p>";
+      return;
+    }
+    
+    container.innerHTML = "";
+    files.forEach(file => {
+      const name = `${rid}/${file.name}`;
+      appendImageCard(container, name);
+    });
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = "<p class='text-center text-muted py-4'>오류가 발생했습니다.</p>";
   }
-  container.innerHTML = "";
-  names.forEach(name => appendImageCard(container, name));
 }
 
 function appendImageCard(container, name) {
@@ -108,49 +125,28 @@ function appendImageCard(container, name) {
   container.append(colDiv);
 }
 
-const ALBUM_KEY = () => `motrip:album:${roomId || "global"}:images`;
-
-function getAlbumList() {
-  try {
-    return JSON.parse(localStorage.getItem(ALBUM_KEY()) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function addAlbumImage(name) {
-  const list = getAlbumList();
-  if (!list.includes(name)) {
-    list.push(name);
-    localStorage.setItem(ALBUM_KEY(), JSON.stringify(list));
-  }
-}
-
-function removeAlbumImage(name) {
-  const list = getAlbumList().filter(n => n !== name);
-  localStorage.setItem(ALBUM_KEY(), JSON.stringify(list));
-}
-
 async function handleImageDelete(name, colDiv) {
   if (!confirm("이 이미지를 삭제하시겠습니까?")) return;
 
-  // localStorage에서 제거 (DOM/스토리지와 무관하게 삭제 확정)
-  removeAlbumImage(name);
-  colDiv.remove();
-  showToast("이미지가 삭제되었습니다.");
-
-  const container = document.querySelector("#image-list");
-  if (container && !container.children.length) {
-    container.innerHTML = "<p class='text-center text-muted py-4'>업로드된 이미지가 없습니다.</p>";
-  }
-
-  // Supabase Storage 삭제 시도 (실패해도 UI는 이미 반영됨)
+  // Supabase Storage 삭제 시도
   try {
     const session = readSBSession();
     if (session?.access_token) {
-      await supabaseClient.storage.from('image').remove([name]);
+      const { error } = await supabaseClient.storage.from('image').remove([name]);
+      if (error) throw error;
+      
+      colDiv.remove();
+      showToast("이미지가 삭제되었습니다.");
+
+      const container = document.querySelector("#image-list");
+      if (container && !container.children.length) {
+        container.innerHTML = "<p class='text-center text-muted py-4'>업로드된 이미지가 없습니다.</p>";
+      }
+    } else {
+      showToast("로그인이 필요합니다.");
     }
-  } catch {
-    // 무시
+  } catch (err) {
+    console.error(err);
+    showToast("이미지 삭제에 실패했습니다.");
   }
 }

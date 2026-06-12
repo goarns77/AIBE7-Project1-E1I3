@@ -181,8 +181,17 @@ function buildCategoryOptions() {
    예산 — 로드 & 저장
    ═══════════════════════════════ */
 async function loadBudget() {
-  // 방별 예산을 localStorage에서 조회, 없으면 0
-  budget = roomId ? (Number(localStorage.getItem(`motrip:budget:${roomId}`)) || 0) : 0;
+  const r_id = roomId || "global";
+  try {
+    const { data } = await supabaseClient
+      .from("budgets")
+      .select("amount")
+      .eq("room_id", r_id)
+      .maybeSingle();
+    budget = data ? data.amount : 0;
+  } catch {
+    budget = 0;
+  }
   document.querySelector('#budget-input').value = budget || '';
   updateBudgetUI();
 }
@@ -192,10 +201,18 @@ async function handleSaveBudget(e) {
   const amount = Number(document.querySelector('#budget-input').value);
   if (!amount || amount <= 0) { showToast(MSG.budget.inputRequired); return; }
 
-  if (roomId) localStorage.setItem(`motrip:budget:${roomId}`, String(amount));
-  budget = amount;
-  showToast(MSG.budget.saveSuccess);
-  updateBudgetUI();
+  const r_id = roomId || "global";
+  const { error } = await supabaseClient
+    .from("budgets")
+    .upsert({ room_id: r_id, amount }, { onConflict: "room_id" });
+
+  if (!error) {
+    budget = amount;
+    showToast(MSG.budget.saveSuccess);
+    updateBudgetUI();
+  } else {
+    showToast("예산 저장에 실패했습니다.");
+  }
 }
 
 function updateBudgetUI() {
@@ -232,21 +249,27 @@ function updateBudgetUI() {
    지출 — 로드 & 렌더
    ═══════════════════════════════ */
 async function loadExpenses() {
+  const r_id = roomId || "global";
   try {
-    // 방별 localStorage에서 조회 (schedule.js와 동일 패턴)
-    const key = `motrip:expenses:${roomId || "global"}`;
-    const raw = localStorage.getItem(key);
-    expenses = raw ? JSON.parse(raw) : [];
+    const { data, error } = await supabaseClient
+      .from("expenses")
+      .select("*")
+      .eq("room_id", r_id)
+      .order("expense_date", { ascending: false });
+    
+    if (!error && data) {
+      expenses = data;
+    } else {
+      expenses = [];
+    }
   } catch {
     expenses = [];
   }
   finRenderAll();
 }
 
-const EXPENSES_KEY = () => `motrip:expenses:${roomId || "global"}`;
-
 function saveExpenses() {
-  localStorage.setItem(EXPENSES_KEY(), JSON.stringify(expenses));
+  // 사용하지 않음 (Supabase 직접 통신으로 대체)
 }
 
 function finRenderAll() {
@@ -322,11 +345,14 @@ async function handleAddExpense(e) {
       showToast(MSG.expense.amountInvalid); return;
     }
 
-    // 방별 localStorage에 저장
-    const newExpense = { id: crypto.randomUUID(), expense_date, category, amount, description, payer, user_id: currentUser.id };
-    expenses.unshift(newExpense);
-    saveExpenses();
-    finRenderAll();
+    // Supabase에 저장
+    const r_id = roomId || "global";
+    const newExpense = { room_id: r_id, expense_date, category, amount, description, payer, user_id: currentUser.id };
+    
+    const { error } = await supabaseClient.from("expenses").insert(newExpense);
+    if (error) throw error;
+    
+    await loadExpenses();
     e.target.reset();
     showToast(MSG.expense.addSuccess);
   } catch (err) {
@@ -373,15 +399,22 @@ async function handleEditExpense(e) {
     showToast(MSG.expense.inputRequired); return;
   }
 
-  // 로컬 배열 갱신
-  const idx = expenses.findIndex(ex => String(ex.id) === String(editingId));
-  if (idx !== -1) {
-    Object.assign(expenses[idx], { expense_date, category, amount, description, payer });
-    saveExpenses();
+  // Supabase 업데이트
+  const r_id = roomId || "global";
+  const { error } = await supabaseClient
+    .from("expenses")
+    .update({ expense_date, category, amount, description, payer })
+    .eq("id", editingId)
+    .eq("room_id", r_id)
+    .eq("user_id", currentUser.id);
+
+  if (error) {
+    showToast("수정에 실패했습니다.");
+    return;
   }
 
   cancelEdit();
-  finRenderAll();
+  await loadExpenses();
   showToast(MSG.expense.editSuccess);
 }
 
@@ -400,10 +433,21 @@ async function deleteExpense(id) {
   if (!confirm(MSG.expense.deleteConfirm)) return;
   if (!currentUser) { showToast(MSG.auth.notLoggedIn); return; }
 
-  // 로컬 배열에서 제거 후 재렌더링
-  expenses = expenses.filter(ex => String(ex.id) !== String(id));
-  saveExpenses();
-  finRenderAll();
+  // Supabase에서 제거
+  const r_id = roomId || "global";
+  const { error } = await supabaseClient
+    .from("expenses")
+    .delete()
+    .eq("id", id)
+    .eq("room_id", r_id)
+    .eq("user_id", currentUser.id);
+
+  if (error) {
+    showToast("삭제에 실패했습니다.");
+    return;
+  }
+
+  await loadExpenses();
 }
 
 /* ═══════════════════════════════
