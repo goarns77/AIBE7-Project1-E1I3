@@ -7,12 +7,16 @@ document.addEventListener('DOMContentLoaded', init);
 function init() {
   // 여행방 생성 폼 제출 핸들러 연결
   document.querySelector('#create-form').addEventListener('submit', handleCreate);
-  // 도착일 최소값을 출발일과 연동
+  // 도착일을 출발일과 연동 (min값 + 자동 초기화)
   const startInput = document.querySelector('#startDate');
   const endInput = document.querySelector('#endDate');
-  startInput.addEventListener('change', () => {
+  const bindDate = () => {
     endInput.min = startInput.value;
-  });
+    if (endInput.value && startInput.value && endInput.value < startInput.value) {
+      endInput.value = "";
+    }
+  };
+  startInput.addEventListener('change', bindDate);
   // 초대 링크 복사 버튼 핸들러 연결
   document.querySelector('#copy-invite').addEventListener('click', handleCopy);
   // 초대 링크 참여 폼 제출 핸들러 연결

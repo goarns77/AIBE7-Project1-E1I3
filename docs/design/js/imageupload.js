@@ -63,18 +63,13 @@ async function handleUpload(event) {
 
     addAlbumImage(safeName);
 
+    // 전체 목록을 다시 렌더링 (append 방식 버그 우회)
     const container = document.querySelector("#image-list");
-    removePlaceholder(container);
-    await appendImageCard(container, safeName);
+    renderFromLocalStorage(container);
 
   } catch (err) {
     console.error("예외 발생:", err);
   }
-}
-
-function removePlaceholder(container) {
-  const ph = container.querySelector("p.text-center.text-muted.py-4");
-  if (ph) ph.remove();
 }
 
 async function renderImageList(container) {
@@ -91,49 +86,25 @@ function renderFromLocalStorage(container) {
   names.forEach(name => appendImageCard(container, name));
 }
 
-async function appendImageCard(container, name) {
+function appendImageCard(container, name) {
   const colDiv = document.createElement("div");
   colDiv.className = "col-6 col-md-4";
 
-  const imgDiv = document.createElement("div");
-  imgDiv.className = "card album-card h-100";
+  const publicUrl = "https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/public/image/" + name;
 
-  const img = document.createElement("img");
-  img.className = "album-img";
-  img.alt = name;
-  img.loading = "lazy";
-
-  // Supabase SDK로 인증된 이미지 로드 시도
-  try {
-    const { data, error } = await supabaseClient.storage.from('image').download(name);
-    if (data) {
-      img.src = URL.createObjectURL(data);
-    } else {
-      throw error || new Error("download failed");
-    }
-  } catch {
-    // fallback: public URL
-    img.src = "https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/public/image/" + name;
-    img.onerror = () => {
-      img.alt = '이미지를 불러올 수 없습니다';
-      img.style.filter = 'grayscale(1)';
-    };
-  }
-
-  imgDiv.appendChild(img);
-
-  const body = document.createElement("div");
-  body.className = "card-body p-2 text-center";
-  body.innerHTML = `
-    <small class="text-muted text-truncate d-block">${name}</small>
-    <button class="btn btn-sm btn-outline-danger mt-1 image-delete" data-name="${name}">삭제</button>
+  colDiv.innerHTML = `
+    <div class="card album-card h-100">
+      <img src="${publicUrl}" class="album-img" alt="${name}" loading="lazy"
+           onerror="this.alt='이미지를 불러올 수 없습니다';this.style.filter='grayscale(1)';">
+      <div class="card-body p-2 text-center">
+        <small class="text-muted text-truncate d-block">${name}</small>
+        <button class="btn btn-sm btn-outline-danger mt-1 image-delete" data-name="${name}">삭제</button>
+      </div>
+    </div>
   `;
-  body.querySelector(".image-delete").addEventListener("click", () => {
+  colDiv.querySelector(".image-delete").addEventListener("click", () => {
     handleImageDelete(name, colDiv);
   });
-
-  imgDiv.appendChild(body);
-  colDiv.appendChild(imgDiv);
   container.append(colDiv);
 }
 
@@ -163,7 +134,7 @@ function removeAlbumImage(name) {
 async function handleImageDelete(name, colDiv) {
   if (!confirm("이 이미지를 삭제하시겠습니까?")) return;
 
-  // localStorage에서 먼저 제거 (Supabase Storage 삭제는 RLS 문제로 실패 가능)
+  // localStorage에서 제거 (DOM/스토리지와 무관하게 삭제 확정)
   removeAlbumImage(name);
   colDiv.remove();
   showToast("이미지가 삭제되었습니다.");
@@ -173,13 +144,13 @@ async function handleImageDelete(name, colDiv) {
     container.innerHTML = "<p class='text-center text-muted py-4'>업로드된 이미지가 없습니다.</p>";
   }
 
-  // Supabase Storage 삭제 시도 (실패해도 무시)
+  // Supabase Storage 삭제 시도 (실패해도 UI는 이미 반영됨)
   try {
     const session = readSBSession();
     if (session?.access_token) {
       await supabaseClient.storage.from('image').remove([name]);
     }
   } catch {
-    // Storage 삭제 실패는 무시 (localStorage에서 이미 제거됨)
+    // 무시
   }
 }
