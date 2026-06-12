@@ -41,40 +41,73 @@
 ## 📁 폴더 구조
 
 ```
-AIBE7-Project1-E1I3/
-├── server.js                 # Express 서버 (정적 서빙 + /api/chat)
-├── package.json
-├── docs/                     # 웹 루트 (GitHub Pages /docs)
-│   └── design/
-│       ├── html/             # index, login, signup, room, room-create,
-│       │                     #  room(플래너), ai-chat, mypage, schedule ...
-│       ├── css/              # room.css(테마), index.css, ...
-│       ├── images/           # 로고·배너
-│       └── js/
-│           ├── config.js     # ⚠️ 키 보관 (gitignore)
-│           ├── api.js        # 여행방/투표/일정 데이터 계층 (Supabase REST)
-│           ├── room.js       # 여행방 페이지 로직
-│           ├── room-create.js
-│           ├── ui.js         # 공통 헬퍼(토스트·복사·XSS·내 여행 목록)
-│           ├── msg.js        # 사용자 메시지 중앙 관리
-│           ├── map.js        # 카카오 지도
-│           ├── schedule.js   # 일정 CRUD + 좋아요 + 지도 마커
-│           ├── finance.js*   # 지출/정산/차트  (*docs/finance/js)
-│           ├── ai-chat.js    # AI 채팅
-│           ├── login.js / signup.js / mypage.js
-│           ├── supabase-client.js / lib/supabase.js  # Supabase 클라이언트
+motrip-project/
+├── README.MD                 # 이 파일
+├── package.json              # 프로젝트 메타정보
+├── package-lock.json         # 의존성 잠금
+├── server.js                 # 간단한 개발 서버 (옵션)
+├── .git/                     # Git 메타데이터
+├── .gitignore                # git 무시 파일
+├── docs/                     # 문서 및 디자인 파일
+│   ├── DESIGN.md             # 디자인 시스템 상세 스펙
+│   ├── AGENTS.md             # 개발 가이드라인
+│   ├── README.md             # 기존 간단 README
+│   └── design/               # 실제 디자인 및 소스 파일
+│       ├── html/             # HTML 템플릿 파일들
+│       │   ├── index.html    # 메인 랜딩 페이지
+│       │   ├── login.html    # 로그인 페이지
+│       │   ├── signup.html   # 회원가입 페이지
+│       │   ├── room.html     # 여행방 메인 화면
+│       │   ├── room-create.html # 여행방 생성 화면
+│       │   ├── ai-chat.html  # AI 채팅 인터페이스
+│       │   ├── mypage.html   # 마이페이지
+│       ├── js/               # JavaScript 모듈들
+│       │   ├── msg.js        # 중앙 메시지 관리 (한국어/영어)
+│       │   ├── ui.js         # UI 헬퍼 함수들 (토스트, 이스케이프 등)
+│       │   ├── api.js        # Supabase API 레이어
+│       │   ├── supabase.js   # 파일 프로토콜 호환 Supabase 클라이언트
+│       │   ├── supabase-client.js # 전역 Supabase 클라이언트
+│       │   ├── mypage.js     # 마이페이지 로직
+│       │   ├── room.js       # 여행방 메인 로직
+│       │   ├── room-create.js # 여행방 생성 로직
+│       │   ├── ai-chat.js    # AI 채팅 기능
+│       │   ├── map.js        # 카카오 지도 통합
+│       │   └── lib/          # 라이브러리 (supabase.js 등)
+│       ├── css/              # 스타일시트 파일들
+│       │   ├── room.css      # 여행방 관련 스타일 (폰트 포함)
+│       │   ├── index.css     # 랜딩 페이지 스타일
+│       │   └── schedule.css  # 경비 관리 스타일
+│       └── images/           # 정적 이미지 자산
+└── .opencode/                # Opencode 설정 (선택 사항)
 ```
 
 ---
 
 ## 🚀 실행 방법
 
-### 1. 의존성 설치
+### 로컬 개발 환경 설정
 
-express
-.env
-nodemon
-cors
+1. **저장소 클론**
+   ```bash
+   git clone <repository-url>
+   cd motrip-project
+   ```
+
+2. **의존성 설치**
+   ```bash
+   npm install
+   ```
+
+3. **로컬 서버 실행**
+   ```bash
+   node server.js
+   ```
+
+4. **브라우저에서 접근**
+   ```
+   http://localhost:포트번호/html/index.html
+   ```
+
 
 ### 2. 환경 변수 (`.env`) — AI 채팅용
 
@@ -93,6 +126,46 @@ const CONFIG = {
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_...",
 };
 ```
+
+## �� 사용 가이드
+
+### 1. 회원가입 및 로그인
+1. 메인 페이지에서 "회원가입" 또는 "로그인" 클릭
+2. 이메일 및 비밀번호 입력
+3. 인증 메일 확인 후 인증 완료
+
+### 2. 여행방 생성
+1. 로그인 후 메인 헤더의 "✈️ 여행방 만들기" 클릭 또는
+2. 마이페이지에서 "여행방 만들기" 버튼 클릭
+3. 여행명, 목적지, 시작일, 종료일 입력 후 생성
+4. 생성된 초대 링크를 친구들에게 공유
+
+### 3. 여행방 참여
+1. 친구로부터 받은 초대 링크 클릭
+2. 닉네임 입력 후 참여 버튼 클릭
+3. 자동으로 여행방 메인 화면으로 이동
+
+### 4. 일정 관리
+1. 여행방 내 일정 탭에서 "장소 검색" 버튼 클릭
+2. 키워드 입력하여 장소 검색 (카카오 지도 연동)
+3. 원하는 날짜 선택 후 "일정에 추가" 버튼 클릭
+
+### 5. 그룹 투표
+1. 여행방 내 투표 탭에서 "새 투표 등록" 버튼 클릭
+2. 투표 주제 및 2개 이상의 선택지 입력
+3. 생성 후 멤버들에게 투표 요청
+4. 실시간 결과 확인 가능
+
+### 6. AI 여행 추천
+1. 메인 헤더의 "�� AI 추천" 클릭 또는
+2. 마이페이지의 AI 어시스턴트 섹션에서 "계획 시작하기" 클릭
+3. 채팅창에 여행 조건 입력 (예: "부산 당일치기, 친구 2명과 맛집 위주로")
+4. AI가 추천 일정 생성 후 추가 질문 가능
+5. 생성된 계획을 내 여행 계획에 저장 가능
+
+### 7. 마이페이지 관리
+1. "프로필 편집" 버튼 클릭
+2. 닉네임 수정 가능
 
 ---
 
@@ -125,6 +198,49 @@ const CONFIG = {
 
 ---
 
+## 기여 가이드
+
+### 버그 보고
+1. Issues 탭에서 버그 보고 템플릿 사용
+2. 재현 단계, 예상 결과, 실제 결과 상세히 기재
+3. 가능한 경우 스크린샷 및 콘솔 로그 포함
+
+### 기능 요청
+1. Ideas 또는 Discussions에서 새로운 기능 제안
+2. 사용 사례 및 예상 이점 설명
+3. 관련 디자인 또는 기술적 고려 사항 제시
+
+### 풀 리퀘스트 제출
+1. 저장소를 Fork하고 새로운 브랜치 생성
+2. 코드 스타일 가이드 준수 (ESLint, Prettier 권장)
+3. 커밋 메시지는 명확하고 간결하게 작성
+4. PR 템플릿에 맞춰 설명 작성
+5. 최소한 하나의 테스트 케이스 추가 (가능한 경우)
+
+### 코드 스타일
+- **JavaScript**: ES6+ 표준, 2스페이스 인데이션, 세미콜론 사용
+- **HTML**: 시맨틱 태그 사용, 소문자 태그 및 속성
+- **CSS**: BEM 방법론 지향, 변수 사용 권장
+- **커밋 메시지**: 
+  - `feat:` 새로운 기능
+  - `fix:` 버그 수정
+  - `docs:` 문서 변경
+  - `style:` 코드 포맷팅 변경
+  - `refactor:` 리팩터링
+  - `test:` 테스트 추가/수정
+  - `chore:` 빌드 프로세스 또는 도구 변경
+
+## 연락처
+
+- **프로젝트 홈페이지**: (https://aibe7-project1-e1i3.onrender.com)
+- **문제 보고**: Issues 탭에서 신고
+- **공식 문서**: docs/ 폴더 내 모든 문서 참조
+
+---
+
+> **참고**: 이 README는 프로젝트의 주요 측면을 담고 있지만, 상세한 구현 사항은 각 모듈의 주석 및 docs/ 디자인을 참조하시기 바랍니다.  
+> **마지막 업데이트**: 2026-06-11  
+> **버전**: 1.0.0
 
 ## 👥 만든 사람
 
