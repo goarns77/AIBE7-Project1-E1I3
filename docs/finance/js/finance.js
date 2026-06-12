@@ -183,12 +183,14 @@ function buildCategoryOptions() {
 async function loadBudget() {
   const r_id = roomId || "global";
   try {
-    const { data } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from("budgets")
-      .select("amount")
+      .select("amount, created_at")
       .eq("room_id", r_id)
-      .maybeSingle();
-    budget = data ? data.amount : 0;
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (error) throw error;
+    budget = data?.[0]?.amount ?? 0;
   } catch {
     budget = 0;
   }
@@ -200,11 +202,12 @@ async function handleSaveBudget(e) {
   e.preventDefault();
   const amount = Number(document.querySelector('#budget-input').value);
   if (!amount || amount <= 0) { showToast(MSG.budget.inputRequired); return; }
+  if (!currentUser) { showToast(MSG.auth.notLoggedIn); return; }
 
   const r_id = roomId || "global";
   const { error } = await supabaseClient
     .from("budgets")
-    .upsert({ room_id: r_id, amount }, { onConflict: "room_id" });
+    .insert({ room_id: r_id, amount, user_id: currentUser.id });
 
   if (!error) {
     budget = amount;
