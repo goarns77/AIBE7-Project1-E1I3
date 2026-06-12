@@ -6,7 +6,10 @@ document.addEventListener('DOMContentLoaded', init);
 // 초기화 — 폼·복사·참여 버튼 이벤트 바인딩
 function init() {
   // 여행방 생성 폼 제출 핸들러 연결
-  document.querySelector('#create-form').addEventListener('submit', handleCreate);
+  const form = document.querySelector('#create-form');
+  // 브라우저 네이티브 검증이 JS 검증을 덮어쓰지 않도록 novalidate
+  form.setAttribute('novalidate', '');
+  form.addEventListener('submit', handleCreate);
   // 도착일을 출발일과 연동 (min값 + 자동 초기화)
   const startInput = document.querySelector('#startDate');
   const endInput = document.querySelector('#endDate');
@@ -17,6 +20,7 @@ function init() {
     }
   };
   startInput.addEventListener('change', bindDate);
+  endInput.addEventListener('change', bindDate);
   // 초대 링크 복사 버튼 핸들러 연결
   document.querySelector('#copy-invite').addEventListener('click', handleCopy);
   // 초대 링크 참여 폼 제출 핸들러 연결
@@ -37,13 +41,26 @@ async function handlePlannerClick(event) {
   } catch {}
 }
 
+// 날짜 검증: 도착일이 출발일보다 이르면 메시지 + 차단
+function validateDate(startDate, endDate) {
+  if (!startDate || !endDate) return true;
+  if (new Date(endDate) < new Date(startDate)) {
+    showToast("도착일은 출발일보다 이후 날짜로 선택해 주세요.");
+    return false;
+  }
+  return true;
+}
+
 // 여행방 생성 submit 핸들러
 async function handleCreate(event) {
   // 기본 제출 동작(새로고침) 차단
   event.preventDefault();
 
   // 폼 입력값을 구조 분해로 추출
-  const { tripTitle, destination, startDate, endDate, host } = Object.fromEntries(new FormData(event.currentTarget));
+  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const { tripTitle, destination, host } = data;
+  const startDate = data.startDate;
+  const endDate = data.endDate;
 
   // 필수값(여행명) 검증
   if (!tripTitle) {
@@ -51,11 +68,8 @@ async function handleCreate(event) {
     return;
   }
 
-  // 날짜 검증: 도착일이 출발일보다 이르면 안 됨
-  if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
-    showToast("도착일은 출발일보다 이후 날짜로 선택해 주세요.");
-    return;
-  }
+  // 날짜 검증: 도착일이 출발일보다 이르면 API 호출 차단
+  if (!validateDate(startDate, endDate)) return;
 
   try {
     // API 레이어로 여행방 생성 요청
