@@ -7,6 +7,12 @@ document.addEventListener('DOMContentLoaded', init);
 function init() {
   // 여행방 생성 폼 제출 핸들러 연결
   document.querySelector('#create-form').addEventListener('submit', handleCreate);
+  // 도착일 최소값을 출발일과 연동
+  const startInput = document.querySelector('#startDate');
+  const endInput = document.querySelector('#endDate');
+  startInput.addEventListener('change', () => {
+    endInput.min = startInput.value;
+  });
   // 초대 링크 복사 버튼 핸들러 연결
   document.querySelector('#copy-invite').addEventListener('click', handleCopy);
   // 초대 링크 참여 폼 제출 핸들러 연결
@@ -38,6 +44,12 @@ async function handleCreate(event) {
   // 필수값(여행명) 검증
   if (!tripTitle) {
     showToast(MSG.common.required);
+    return;
+  }
+
+  // 날짜 검증: 도착일이 출발일보다 이르면 안 됨
+  if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+    showToast("도착일은 출발일보다 이후 날짜로 선택해 주세요.");
     return;
   }
 
@@ -123,10 +135,7 @@ async function handleJoinByInvite(event) {
       btn.disabled = false;
       btn.innerHTML = '<span class="material-symbols-outlined">login</span> 참여하기';
       return;
-  // 플래너 링크 클릭 시 방 목록에 따라 이동
-  const planner = document.querySelector('#navPlanner');
-  if (planner) planner.addEventListener('click', handlePlannerClick);
-}
+    }
     // 참여 API 호출
     const me = await joinRoom(roomId, { nickname });
     localStorage.setItem(`motrip:me:${roomId}`, me.id);
