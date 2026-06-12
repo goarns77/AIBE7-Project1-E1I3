@@ -4,7 +4,7 @@
 
 ```
 docs/
-├── finance.html                  ← 진입 페이지
+├── html/index.html               ← 진입 페이지
 └── finance/
     ├── css/
     │   └── finance.css           ← 모듈 전용 스타일 (DESIGN.md 기반)
@@ -74,6 +74,6 @@ CREATE POLICY "budgets_insert_own"   ON public.budgets  FOR INSERT WITH CHECK (a
 ## 타 모듈 호환성
 
 - **Supabase URL/Key**: `finance/js/supabase-client.js`는 `design/js/supabase-client.js`와 동일한 값 사용
-- **네비게이션**: 상단 navbar에서 `schedule.html`, `imageupload.html`, `room.html`, `ai-chat.html` 링크 포함
+- **네비게이션**: 상단 navbar에서 `../design/html/schedule.html`, `../design/html/imageupload.html`, `room.html`, `ai-chat.html` 링크 포함
 - **디자인 시스템**: DESIGN.md 컬러 토큰·Plus Jakarta Sans·Bootstrap 5.3 사용
 - **코딩 규칙**: AGENTS.md 준수 (ES6+, querySelector, 선언문 핸들러, 한글 주석 50자 이내)

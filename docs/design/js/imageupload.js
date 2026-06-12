@@ -60,23 +60,13 @@ async function handleUpload(event) {
     showToast("사진이 업로드되었습니다.");
     event.target.reset();
 
-    // 업로드된 이미지를 목록에 직접 추가 (리스트 API는 RLS 차단 가능성)
+    // localStorage에 기록 (새로고침 fallback)
+    addAlbumImage(safeName);
+
+    // 업로드된 이미지를 목록에 직접 추가
     const container = document.querySelector("#image-list");
-    // 처음 업로드면 안내 메시지 제거
     if (container.querySelector(".text-muted")) container.innerHTML = "";
-    const publicUrl = "https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/public/image/" + safeName;
-    const colDiv = document.createElement("div");
-    colDiv.className = "col-6 col-md-4";
-    colDiv.innerHTML = `
-      <div class="card album-card h-100">
-        <img src="${publicUrl}" class="album-img" alt="${safeName}" loading="lazy"
-             onerror="this.alt='이미지를 불러올 수 없습니다';this.style.filter='grayscale(1)';">
-        <div class="card-body p-2 text-center">
-          <small class="text-muted text-truncate d-block">${safeName}</small>
-        </div>
-      </div>
-    `;
-    container.append(colDiv);
+    appendImageCard(container, safeName);
 
   } catch (err) {
     console.error("예외 발생:", err);
@@ -104,40 +94,140 @@ async function renderImageList(container) {
     if (!res.ok) {
       const errText = await res.text();
       console.error("목록 조회 에러:", errText);
-      container.innerHTML = errText.includes("Bucket not found")
-        ? "<p class='text-warning text-center'>Supabase Storage에 'image' 버킷을 생성해 주세요.</p>"
-        : "<p class='text-danger text-center'>이미지를 불러오지 못했습니다. 버킷이 public인지 확인해 주세요.</p>";
+      // 리스트 API 실패 시 localStorage fallback
+      renderFromLocalStorage(container);
       return;
     }
 
     const imageList = await res.json();
 
     if (!imageList || imageList.length === 0) {
+      // API는 성공했으나 목록이 비어있으면 localStorage 확인
+      const local = getAlbumList();
+      if (local.length) {
+        container.innerHTML = "";
+        local.forEach(name => appendImageCard(container, name));
+        return;
+      }
       container.innerHTML = "<p class='text-muted text-center'>업로드된 이미지가 없습니다.</p>";
       return;
     }
 
     container.innerHTML = "";
 
-    const baseUrl = "https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/public/image/";
-
     for (const image of imageList) {
       if (image.name === ".emptyFolderPlaceholder") continue;
-      const publicUrl = baseUrl + image.name;
-      const colDiv = document.createElement("div");
-      colDiv.className = "col-6 col-md-4";
-      colDiv.innerHTML = `
-        <div class="card album-card h-100">
-          <img src="${publicUrl}" class="album-img" alt="${image.name}" loading="lazy"
-               onerror="this.alt='이미지를 불러올 수 없습니다';this.style.filter='grayscale(1)';">
-          <div class="card-body p-2 text-center">
-            <small class="text-muted text-truncate d-block">${image.name}</small>
-          </div>
-        </div>
-      `;
-      container.append(colDiv);
+      // API에서 가져온 이미지도 localStorage에 기록 (차후 fallback 대비)
+      addAlbumImage(image.name);
+      appendImageCard(container, image.name);
     }
   } catch (err) {
     console.error("렌더링 예외 발생:", err);
+    renderFromLocalStorage(container);
+  }
+}
+
+// localStorage에서 이미지 목록을 가져와 렌더링
+function renderFromLocalStorage(container) {
+  const names = getAlbumList();
+  if (!names.length) {
+    container.innerHTML = "<p class='text-muted text-center'>업로드된 이미지가 없습니다.</p>";
+    return;
+  }
+  container.innerHTML = "";
+  names.forEach(name => appendImageCard(container, name));
+}
+
+// 이미지 카드 하나를 생성해 container에 추가
+function appendImageCard(container, name) {
+  const publicUrl = "https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/public/image/" + name;
+  const colDiv = document.createElement("div");
+  colDiv.className = "col-6 col-md-4";
+  colDiv.innerHTML = `
+    <div class="card album-card h-100">
+      <img src="${publicUrl}" class="album-img" alt="${name}" loading="lazy"
+           onerror="this.alt='이미지를 불러올 수 없습니다';this.style.filter='grayscale(1)';">
+      <div class="card-body p-2 text-center">
+        <small class="text-muted text-truncate d-block">${name}</small>
+        <button class="btn btn-sm btn-outline-danger mt-1 image-delete" data-name="${name}">삭제</button>
+      </div>
+    </div>
+  `;
+  colDiv.querySelector(".image-delete").addEventListener("click", () => {
+    handleImageDelete(name, colDiv);
+  });
+  container.append(colDiv);
+}
+
+// localStorage 읽기/쓰기 헬퍼
+const ALBUM_KEY = "motrip:album:images";
+
+function getAlbumList() {
+  try {
+    return JSON.parse(localStorage.getItem(ALBUM_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function addAlbumImage(name) {
+  const list = getAlbumList();
+  if (!list.includes(name)) {
+    list.push(name);
+    localStorage.setItem(ALBUM_KEY, JSON.stringify(list));
+  }
+}
+
+function removeAlbumImage(name) {
+  const list = getAlbumList().filter(n => n !== name);
+  localStorage.setItem(ALBUM_KEY, JSON.stringify(list));
+}
+
+async function handleImageDelete(name, colDiv) {
+  if (!confirm("이 이미지를 삭제하시겠습니까?")) return;
+
+  try {
+    const session = readSBSession();
+    if (!session?.access_token) {
+      showToast("로그인이 필요합니다.");
+      return;
+    }
+
+    const res = await fetch(
+      `https://porvghadkgpamnvbuyqu.supabase.co/storage/v1/object/image/${encodeURIComponent(name)}`,
+      {
+        method: "DELETE",
+        headers: {
+          apikey: "sb_publishable_cpvF4f7QZzxK16Q_-JNM5A_czghLSxK",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      },
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("삭제 에러:", res.status, errText);
+      if (res.status === 401 || res.status === 403) {
+        showToast("삭제 권한이 없습니다.");
+      } else if (res.status === 404) {
+        showToast("파일을 찾을 수 없습니다.");
+      } else {
+        showToast("삭제에 실패했습니다.");
+      }
+      return;
+    }
+
+    colDiv.remove();
+    removeAlbumImage(name);
+    showToast("이미지가 삭제되었습니다.");
+
+    // 목록이 비었으면 안내 메시지 표시
+    const container = document.querySelector("#image-list");
+    if (container && !container.children.length) {
+      container.innerHTML = "<p class='text-muted text-center'>업로드된 이미지가 없습니다.</p>";
+    }
+  } catch (err) {
+    console.error("삭제 예외 발생:", err);
+    showToast("삭제 중 오류가 발생했습니다.");
   }
 }

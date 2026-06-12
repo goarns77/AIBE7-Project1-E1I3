@@ -10,7 +10,7 @@
 
 ```
 AIBE7-Project1-E1I3/
-├── schedule.html              ← 일정 관리 UI 페이지
+├── html/index.html            ← 일정 관리 UI 페이지
 ├── css/
 │   └── schedule.css           ← 폰트(Paperlogy·Pretendard) + 최소 커스텀 스타일
 └── js/
